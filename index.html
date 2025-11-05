@@ -1,0 +1,3188 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Sistem Tagihan Internet BUMDes Cikahuripan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        /* Mobile touch optimizations */
+        .touch-manipulation {
+            touch-action: manipulation;
+        }
+        
+        /* Better button sizing for mobile */
+        @media (max-width: 640px) {
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            input, select, textarea {
+                min-height: 44px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        /* Improved table scrolling on mobile */
+        .table-container {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Modal improvements for mobile */
+        @media (max-width: 640px) {
+            .modal-content {
+                margin: 1rem;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .print-hidden {
+            display: none !important;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-full">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Header -->
+        <header class="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex items-center space-x-3 md:space-x-4">
+                    <!-- Logo BUMDes dan Desa -->
+                    <div class="flex items-center space-x-2 md:space-x-3">
+                        <!-- Logo Desa -->
+                        <div class="w-12 h-12 md:w-16 md:h-16 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                            <img src="https://i.ibb.co/dwQjsBcv/logo-desa.png" alt="Logo Desa Cikahuripan" class="w-10 h-10 md:w-14 md:h-14 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-10 h-10 md:w-14 md:h-14 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs" style="display: none;">DESA</div>
+                        </div>
+                        <!-- Logo BUMDes -->
+                        <div class="w-12 h-12 md:w-16 md:h-16 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                            <img src="https://i.ibb.co/1YjCKFWT/logo-bumdes.png" alt="Logo BUMDes" class="w-10 h-10 md:w-14 md:h-14 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-10 h-10 md:w-14 md:h-14 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs" style="display: none;">BUMDES</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-lg md:text-2xl font-bold text-gray-800 leading-tight">BUMDes Cikahuripan Makmur Mandiri Sejahtera</h1>
+                        <p class="text-sm md:text-base text-gray-600">Desa Cikahuripan, Klapanunggal, Bogor</p>
+                        <p class="text-xs md:text-sm text-blue-600 font-medium">Sistem Tagihan Internet</p>
+                    </div>
+                </div>
+                <div class="text-left md:text-right">
+                    <p class="text-xs md:text-sm text-gray-500" id="currentDate"></p>
+                    <p class="text-sm md:text-lg font-semibold text-green-600">Jatuh Tempo: Tanggal 5</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-white rounded-lg shadow-lg mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-0">
+                <button onclick="showSection('pelanggan')" class="nav-btn px-3 py-4 text-center font-medium border-b-2 border-blue-500 text-blue-600 bg-blue-50 text-xs md:text-sm">
+                    <div class="flex flex-col items-center">
+                        <span class="text-lg mb-1">👥</span>
+                        <span class="hidden sm:inline">Data Pelanggan</span>
+                        <span class="sm:hidden">Pelanggan</span>
+                    </div>
+                </button>
+                <button onclick="showSection('tagihan')" class="nav-btn px-3 py-4 text-center font-medium border-b-2 border-transparent text-gray-600 hover:text-blue-600 hover:bg-blue-50 text-xs md:text-sm">
+                    <div class="flex flex-col items-center">
+                        <span class="text-lg mb-1">📋</span>
+                        <span class="hidden sm:inline">Tagihan Bulan Ini</span>
+                        <span class="sm:hidden">Tagihan</span>
+                    </div>
+                </button>
+                <button onclick="showSection('pengeluaran')" class="nav-btn px-3 py-4 text-center font-medium border-b-2 border-transparent text-gray-600 hover:text-blue-600 hover:bg-blue-50 text-xs md:text-sm">
+                    <div class="flex flex-col items-center">
+                        <span class="text-lg mb-1">💸</span>
+                        <span class="hidden sm:inline">Pengeluaran</span>
+                        <span class="sm:hidden">Biaya</span>
+                    </div>
+                </button>
+                <button onclick="showSection('laporan')" class="nav-btn px-3 py-4 text-center font-medium border-b-2 border-transparent text-gray-600 hover:text-blue-600 hover:bg-blue-50 text-xs md:text-sm">
+                    <div class="flex flex-col items-center">
+                        <span class="text-lg mb-1">📊</span>
+                        <span class="hidden sm:inline">Laporan Lengkap</span>
+                        <span class="sm:hidden">Laporan</span>
+                    </div>
+                </button>
+                <button onclick="generateMonthlyBills()" class="px-3 py-4 text-center font-medium bg-green-600 text-white hover:bg-green-700 rounded-tr-lg text-xs md:text-sm">
+                    <div class="flex flex-col items-center">
+                        <span class="text-lg mb-1">⚡</span>
+                        <span class="hidden sm:inline">Generate Tagihan</span>
+                        <span class="sm:hidden">Generate</span>
+                    </div>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Section: Data Pelanggan -->
+        <div id="pelanggan-section" class="section">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Database Pelanggan</h2>
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <button onclick="showAddCustomerForm()" class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium text-sm touch-manipulation">
+                            ➕ <span class="hidden sm:inline">Tambah</span> Pelanggan
+                        </button>
+                        <button onclick="showImportExcelForm()" class="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 font-medium text-sm touch-manipulation">
+                            📊 Import Excel
+                        </button>
+                        <button onclick="downloadExcelTemplate()" class="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 font-medium text-sm touch-manipulation">
+                            📥 Template
+                        </button>
+                        <button onclick="exportCustomersByRegion()" class="bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 font-medium text-sm touch-manipulation">
+                            📍 <span class="hidden sm:inline">Laporan</span> Wilayah
+                        </button>
+                        <button onclick="migrateCustomerRegions()" class="bg-yellow-600 text-white px-4 py-3 rounded-lg hover:bg-yellow-700 font-medium text-sm touch-manipulation">
+                            🔄 <span class="hidden sm:inline">Migrasi</span> Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form Import Excel -->
+                <div id="import-excel-form" class="hidden bg-blue-50 p-6 rounded-lg mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Import Data Pelanggan dari Excel</h3>
+                    <div class="mb-4">
+                        <label for="excel-file" class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel (.xlsx, .xls)</label>
+                        <input type="file" id="excel-file" accept=".xlsx,.xls" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-xs text-gray-500 mt-1">Format: Nama | No WA | Alamat | Paket | Harga | Tanggal Aktif</p>
+                    </div>
+                    
+                    <!-- Template Format Display -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <h4 class="font-semibold text-yellow-800 mb-3">📋 Format Template Excel Manual:</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs border-collapse border border-gray-300">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="border border-gray-300 px-2 py-1 text-left">A (Nama)</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-left">B (No WA)</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-left">C (Alamat Lengkap)</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-left">D (Paket)</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-left">E (Harga)</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-left">F (Tgl Aktif)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-gray-300 px-2 py-1">Budi Santoso</td>
+                                        <td class="border border-gray-300 px-2 py-1">081234567890</td>
+                                        <td class="border border-gray-300 px-2 py-1">RT 02/RW 03, Kampung Raya, Jl. Raya Cikahuripan No. 15</td>
+                                        <td class="border border-gray-300 px-2 py-1">Paket Standard 20 Mbps</td>
+                                        <td class="border border-gray-300 px-2 py-1">200000</td>
+                                        <td class="border border-gray-300 px-2 py-1">2024-01-15</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-gray-300 px-2 py-1">Siti Nurhaliza</td>
+                                        <td class="border border-gray-300 px-2 py-1">082345678901</td>
+                                        <td class="border border-gray-300 px-2 py-1">RT 01/RW 02, Kampung Tengah, Jl. Masjid Cikahuripan No. 8</td>
+                                        <td class="border border-gray-300 px-2 py-1">Paket Basic 10 Mbps</td>
+                                        <td class="border border-gray-300 px-2 py-1">150000</td>
+                                        <td class="border border-gray-300 px-2 py-1">2024-02-01</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3 text-sm text-yellow-700">
+                            <p><strong>Cara Membuat:</strong></p>
+                            <ol class="list-decimal list-inside space-y-1 mt-2">
+                                <li>Buka Excel/Google Sheets baru</li>
+                                <li>Di baris pertama (header), ketik: <strong>Nama | No WA | Alamat Lengkap | Paket | Harga | Tanggal Aktif</strong></li>
+                                <li>Mulai baris kedua, isi data pelanggan sesuai format di atas</li>
+                                <li>Untuk kolom Alamat Lengkap, <strong>WAJIB</strong> dimulai dengan RT/RW: <em>RT 01/RW 01, Kampung Babakan, Jl. ...</em></li>
+                                <li>Untuk kolom Paket, pilih: Paket Basic 10 Mbps, Paket Standard 20 Mbps, Paket Premium 50 Mbps, atau Paket Ultra 100 Mbps</li>
+                                <li>Untuk kolom Harga, tulis angka saja (tanpa "Rp" atau titik)</li>
+                                <li>Untuk Tanggal Aktif, gunakan format: YYYY-MM-DD (contoh: 2024-01-15)</li>
+                                <li>Simpan sebagai file .xlsx</li>
+                            </ol>
+                            <div class="bg-yellow-200 p-2 rounded mt-2">
+                                <p class="font-semibold">⚠️ Penting: Alamat harus dimulai dengan RT/RW untuk pengelompokan wilayah otomatis!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="importFromExcel()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium">
+                            📊 Import Data
+                        </button>
+                        <button onclick="hideImportExcelForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 font-medium">
+                            ❌ Batal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter Pelanggan -->
+                <div class="bg-blue-50 p-4 rounded-lg mb-6 border-l-4 border-blue-500">
+                    <h3 class="font-semibold mb-3 text-blue-800">🔍 Filter & Pencarian Pelanggan</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label for="customer-search" class="block text-sm font-medium text-gray-700 mb-1">Cari Nama/No WA</label>
+                            <input type="text" id="customer-search" placeholder="Ketik nama atau nomor..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" onkeyup="filterCustomers()">
+                        </div>
+                        <div>
+                            <label for="region-filter" class="block text-sm font-medium text-gray-700 mb-1">Filter Wilayah</label>
+                            <select id="region-filter" onchange="filterCustomers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Semua Wilayah</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="package-filter" class="block text-sm font-medium text-gray-700 mb-1">Filter Paket</label>
+                            <select id="package-filter" onchange="filterCustomers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Semua Paket</option>
+                                <option value="Paket Basic 10 Mbps">Basic 10 Mbps</option>
+                                <option value="Paket Standard 20 Mbps">Standard 20 Mbps</option>
+                                <option value="Paket Premium 50 Mbps">Premium 50 Mbps</option>
+                                <option value="Paket Ultra 100 Mbps">Ultra 100 Mbps</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="clearAllFilters()" class="w-full bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 text-sm font-medium">
+                                🔄 Reset Filter
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Filter -->
+                    <div id="filter-summary" class="mt-3 text-sm text-blue-700">
+                        <!-- Summary akan diisi oleh JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Form Tambah Pelanggan -->
+                <div id="add-customer-form" class="hidden bg-gray-50 p-6 rounded-lg mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Tambah Pelanggan Baru</h3>
+                    <form onsubmit="addCustomer(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="customerName" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                            <input type="text" id="customerName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="customerPhone" class="block text-sm font-medium text-gray-700 mb-1">No WhatsApp</label>
+                            <input type="tel" id="customerPhone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="08xxxxxxxxxx">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="customerAddress" class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap (Sertakan RT/RW)</label>
+                            <textarea id="customerAddress" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Contoh: RT 02/RW 03, Kampung Raya, Jl. Raya Cikahuripan No. 15"></textarea>
+                            <p class="text-xs text-gray-500 mt-1">💡 Pastikan mencantumkan RT/RW di awal alamat untuk pengelompokan wilayah</p>
+                        </div>
+                        <div>
+                            <label for="customerPackage" class="block text-sm font-medium text-gray-700 mb-1">Paket Internet</label>
+                            <select id="customerPackage" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Pilih Paket</option>
+                                <option value="Paket Basic 10 Mbps">Paket Basic 10 Mbps</option>
+                                <option value="Paket Standard 20 Mbps">Paket Standard 20 Mbps</option>
+                                <option value="Paket Premium 50 Mbps">Paket Premium 50 Mbps</option>
+                                <option value="Paket Ultra 100 Mbps">Paket Ultra 100 Mbps</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="customerPrice" class="block text-sm font-medium text-gray-700 mb-1">Harga Bulanan (Rp)</label>
+                            <input type="number" id="customerPrice" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="150000">
+                        </div>
+                        <div>
+                            <label for="customerActiveDate" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Aktif</label>
+                            <input type="date" id="customerActiveDate" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-2 flex gap-3">
+                            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium">
+                                💾 Simpan Pelanggan
+                            </button>
+                            <button type="button" onclick="hideAddCustomerForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 font-medium">
+                                ❌ Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Form Edit Pelanggan -->
+                <div id="edit-customer-form" class="hidden bg-yellow-50 p-6 rounded-lg mb-6 border-l-4 border-yellow-500">
+                    <h3 class="text-lg font-semibold mb-4 text-yellow-800">✏️ Edit Data Pelanggan</h3>
+                    <form onsubmit="updateCustomer(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="hidden" id="editCustomerId">
+                        <div>
+                            <label for="editCustomerName" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                            <input type="text" id="editCustomerName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
+                        <div>
+                            <label for="editCustomerPhone" class="block text-sm font-medium text-gray-700 mb-1">No WhatsApp</label>
+                            <input type="tel" id="editCustomerPhone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" placeholder="08xxxxxxxxxx">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="editCustomerAddress" class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap (Sertakan RT/RW)</label>
+                            <textarea id="editCustomerAddress" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" rows="3"></textarea>
+                            <p class="text-xs text-gray-500 mt-1">💡 Pastikan mencantumkan RT/RW di awal alamat untuk pengelompokan wilayah</p>
+                        </div>
+                        <div>
+                            <label for="editCustomerPackage" class="block text-sm font-medium text-gray-700 mb-1">Paket Internet</label>
+                            <select id="editCustomerPackage" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                                <option value="">Pilih Paket</option>
+                                <option value="Paket Basic 10 Mbps">Paket Basic 10 Mbps</option>
+                                <option value="Paket Standard 20 Mbps">Paket Standard 20 Mbps</option>
+                                <option value="Paket Premium 50 Mbps">Paket Premium 50 Mbps</option>
+                                <option value="Paket Ultra 100 Mbps">Paket Ultra 100 Mbps</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="editCustomerPrice" class="block text-sm font-medium text-gray-700 mb-1">Harga Bulanan (Rp)</label>
+                            <input type="number" id="editCustomerPrice" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" placeholder="150000">
+                        </div>
+                        <div>
+                            <label for="editCustomerActiveDate" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Aktif</label>
+                            <input type="date" id="editCustomerActiveDate" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold text-yellow-800 mb-2">⚠️ Perhatian Perubahan Paket:</h4>
+                                <ul class="text-sm text-yellow-700 space-y-1">
+                                    <li>• Perubahan paket akan berlaku untuk tagihan bulan berikutnya</li>
+                                    <li>• Tagihan yang sudah dibuat bulan ini tetap menggunakan paket lama</li>
+                                    <li>• Pastikan harga sesuai dengan paket yang dipilih</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3">
+                            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium">
+                                ✅ Update Pelanggan
+                            </button>
+                            <button type="button" onclick="hideEditCustomerForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 font-medium">
+                                ❌ Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tabel Pelanggan -->
+                <div class="overflow-x-auto table-container">
+                    <table class="w-full border-collapse border border-gray-300 min-w-max">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm">No</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-32">Nama</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-28">No WA</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-28 hidden lg:table-cell">Wilayah</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-40 hidden md:table-cell">Alamat</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-32">Paket</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-24">Harga</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-24 hidden sm:table-cell">Tgl Aktif</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-28">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Tagihan -->
+        <div id="tagihan-section" class="section hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Tagihan Bulan <span id="current-month"></span></h2>
+                    <div class="flex gap-3">
+                        <select id="bill-month-filter" onchange="filterBillsByMonth()" class="px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Semua Bulan</option>
+                        </select>
+                        <button onclick="generateMonthlyBills()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium">
+                            🔄 Refresh Tagihan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h3 class="text-sm font-medium text-blue-700">Total Tagihan</h3>
+                        <p class="text-2xl font-bold text-blue-900" id="total-bills">0</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+                        <h3 class="text-sm font-medium text-green-700">Sudah Bayar</h3>
+                        <p class="text-2xl font-bold text-green-900" id="paid-bills">0</p>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
+                        <h3 class="text-sm font-medium text-red-700">Belum Bayar</h3>
+                        <p class="text-2xl font-bold text-red-900" id="unpaid-bills">0</p>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-500">
+                        <h3 class="text-sm font-medium text-yellow-700">Total Pendapatan</h3>
+                        <p class="text-xl font-bold text-yellow-900" id="total-revenue">Rp 0</p>
+                    </div>
+                </div>
+
+                <!-- Tabel Tagihan -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">No</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Nama Pelanggan</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Paket</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Periode</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Jumlah</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Jatuh Tempo</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Status</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bills-table">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Pengeluaran -->
+        <div id="pengeluaran-section" class="section hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Pencatatan Pengeluaran</h2>
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <button onclick="showAddExpenseForm()" class="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 font-medium text-sm touch-manipulation">
+                            ➕ <span class="hidden sm:inline">Tambah</span> Pengeluaran
+                        </button>
+                        <button onclick="exportExpenseReport()" class="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 font-medium text-sm touch-manipulation">
+                            📄 Export Laporan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form Tambah Pengeluaran -->
+                <div id="add-expense-form" class="hidden bg-red-50 p-6 rounded-lg mb-6 border-l-4 border-red-500">
+                    <h3 class="text-lg font-semibold mb-4 text-red-800">💸 Tambah Pengeluaran Baru</h3>
+                    <form onsubmit="addExpense(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="expenseDate" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Pengeluaran</label>
+                            <input type="date" id="expenseDate" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        <div>
+                            <label for="expenseCategory" class="block text-sm font-medium text-gray-700 mb-1">Kategori Pengeluaran</label>
+                            <select id="expenseCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                <option value="">Pilih Kategori</option>
+                                <option value="Bandwidth/Internet">🌐 Bandwidth/Internet</option>
+                                <option value="Gaji Teknisi">👨‍💻 Gaji Teknisi</option>
+                                <option value="Peralatan Jaringan">🔧 Peralatan Jaringan</option>
+                                <option value="Biaya Pasang">🏗️ Biaya Pasang</option>
+                                <option value="Maintenance">🔧 Maintenance</option>
+                                <option value="Listrik">⚡ Listrik</option>
+                                <option value="Transportasi">🚗 Transportasi</option>
+                                <option value="Administrasi">📋 Administrasi</option>
+                                <option value="Lainnya">📦 Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="expenseDescription" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Pengeluaran</label>
+                            <textarea id="expenseDescription" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" rows="2" placeholder="Contoh: Bayar bandwidth bulan Januari 2024"></textarea>
+                        </div>
+                        <div>
+                            <label for="expenseAmount" class="block text-sm font-medium text-gray-700 mb-1">Jumlah Pengeluaran (Rp)</label>
+                            <input type="number" id="expenseAmount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="500000">
+                        </div>
+                        <div>
+                            <label for="expensePaymentMethod" class="block text-sm font-medium text-gray-700 mb-1">Metode Pembayaran</label>
+                            <select id="expensePaymentMethod" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                <option value="">Pilih Metode</option>
+                                <option value="Tunai">💰 Tunai</option>
+                                <option value="Transfer Bank">🏦 Transfer Bank</option>
+                                <option value="DANA">💳 DANA</option>
+                                <option value="Kartu Kredit">💳 Kartu Kredit</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="expenseNotes" class="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
+                            <textarea id="expenseNotes" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" rows="2" placeholder="Catatan tambahan jika diperlukan"></textarea>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3">
+                            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium">
+                                💾 Simpan Pengeluaran
+                            </button>
+                            <button type="button" onclick="hideAddExpenseForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 font-medium">
+                                ❌ Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Form Edit Pengeluaran -->
+                <div id="edit-expense-form" class="hidden bg-yellow-50 p-6 rounded-lg mb-6 border-l-4 border-yellow-500">
+                    <h3 class="text-lg font-semibold mb-4 text-yellow-800">✏️ Edit Pengeluaran</h3>
+                    <form onsubmit="updateExpense(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="hidden" id="editExpenseId">
+                        <div>
+                            <label for="editExpenseDate" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Pengeluaran</label>
+                            <input type="date" id="editExpenseDate" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
+                        <div>
+                            <label for="editExpenseCategory" class="block text-sm font-medium text-gray-700 mb-1">Kategori Pengeluaran</label>
+                            <select id="editExpenseCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                                <option value="">Pilih Kategori</option>
+                                <option value="Bandwidth/Internet">🌐 Bandwidth/Internet</option>
+                                <option value="Gaji Teknisi">👨‍💻 Gaji Teknisi</option>
+                                <option value="Peralatan Jaringan">🔧 Peralatan Jaringan</option>
+                                <option value="Biaya Pasang">🏗️ Biaya Pasang</option>
+                                <option value="Maintenance">🔧 Maintenance</option>
+                                <option value="Listrik">⚡ Listrik</option>
+                                <option value="Transportasi">🚗 Transportasi</option>
+                                <option value="Administrasi">📋 Administrasi</option>
+                                <option value="Lainnya">📦 Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="editExpenseDescription" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Pengeluaran</label>
+                            <textarea id="editExpenseDescription" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" rows="2"></textarea>
+                        </div>
+                        <div>
+                            <label for="editExpenseAmount" class="block text-sm font-medium text-gray-700 mb-1">Jumlah Pengeluaran (Rp)</label>
+                            <input type="number" id="editExpenseAmount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
+                        <div>
+                            <label for="editExpensePaymentMethod" class="block text-sm font-medium text-gray-700 mb-1">Metode Pembayaran</label>
+                            <select id="editExpensePaymentMethod" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                                <option value="">Pilih Metode</option>
+                                <option value="Tunai">💰 Tunai</option>
+                                <option value="Transfer Bank">🏦 Transfer Bank</option>
+                                <option value="DANA">💳 DANA</option>
+                                <option value="Kartu Kredit">💳 Kartu Kredit</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="editExpenseNotes" class="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan</label>
+                            <textarea id="editExpenseNotes" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" rows="2"></textarea>
+                        </div>
+                        <div class="md:col-span-2 flex gap-3">
+                            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium">
+                                ✅ Update Pengeluaran
+                            </button>
+                            <button type="button" onclick="hideEditExpenseForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 font-medium">
+                                ❌ Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filter dan Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Filter -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold mb-3">🔍 Filter Pengeluaran</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <select id="expense-month-filter" onchange="filterExpenses()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="">Semua Bulan</option>
+                            </select>
+                            <select id="expense-category-filter" onchange="filterExpenses()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="">Semua Kategori</option>
+                                <option value="Bandwidth/Internet">🌐 Bandwidth/Internet</option>
+                                <option value="Gaji Teknisi">👨‍💻 Gaji Teknisi</option>
+                                <option value="Peralatan Jaringan">🔧 Peralatan Jaringan</option>
+                                <option value="Biaya Pasang">🏗️ Biaya Pasang</option>
+                                <option value="Maintenance">🔧 Maintenance</option>
+                                <option value="Listrik">⚡ Listrik</option>
+                                <option value="Transportasi">🚗 Transportasi</option>
+                                <option value="Administrasi">📋 Administrasi</option>
+                                <option value="Lainnya">📦 Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
+                        <h3 class="font-semibold mb-3 text-red-800">📊 Ringkasan Pengeluaran</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Total Pengeluaran:</span>
+                                <span class="font-bold text-red-600" id="total-expenses">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Jumlah Transaksi:</span>
+                                <span class="font-semibold" id="expense-count">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-gray-600">Rata-rata per Transaksi:</span>
+                                <span class="font-semibold" id="average-expense">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabel Pengeluaran -->
+                <div class="overflow-x-auto table-container">
+                    <table class="w-full border-collapse border border-gray-300 min-w-max">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm">No</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-24">Tanggal</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-32">Kategori</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-40">Deskripsi</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-24">Jumlah</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-24 hidden sm:table-cell">Metode</th>
+                                <th class="border border-gray-300 px-2 md:px-4 py-3 text-left font-semibold text-xs md:text-sm min-w-28">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-table">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Laporan -->
+        <div id="laporan-section" class="section hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">Laporan Keuangan Lengkap</h2>
+                    <div class="flex gap-3">
+                        <select id="report-month-filter" onchange="filterReportsByMonth()" class="px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Semua Bulan</option>
+                        </select>
+                        <button onclick="exportCompleteReport()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-medium">
+                            📄 Export Laporan Lengkap
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Laporan Summary -->
+                <div id="report-summary" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <!-- Summary akan diisi oleh JavaScript -->
+                </div>
+
+                <!-- Analisis Keuntungan -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg mb-6 border-l-4 border-green-500">
+                    <h3 class="text-lg font-bold text-green-800 mb-4">💰 Analisis Keuntungan Bulanan</h3>
+                    <div id="profit-analysis" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Analisis akan diisi oleh JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Tabel Laporan Lengkap -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Bulan</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Pelanggan</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Pendapatan</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Pengeluaran</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Keuntungan</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Margin (%)</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold">Tingkat Bayar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-table">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Analisis Wilayah -->
+                <div class="mt-8 bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
+                    <h3 class="text-lg font-bold text-blue-800 mb-4">📍 Analisis Pelanggan per Wilayah</h3>
+                    <div id="regional-analysis" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Regional analysis akan diisi oleh JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Grafik Kategori Pengeluaran -->
+                <div class="mt-8 bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">📊 Breakdown Pengeluaran per Kategori</h3>
+                    <div id="expense-breakdown" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Breakdown akan diisi oleh JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Pembayaran -->
+        <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg p-4 md:p-6 w-full max-w-md modal-content">
+                <h3 class="text-lg font-bold mb-4">Proses Pembayaran</h3>
+                <div id="payment-details" class="mb-4">
+                    <!-- Detail pembayaran akan diisi oleh JavaScript -->
+                </div>
+                <div class="mb-4">
+                    <label for="payment-method" class="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran</label>
+                    <select id="payment-method" onchange="showPaymentDetails()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="Tunai di Kantor BUMDes">Tunai di Kantor BUMDes</option>
+                        <option value="Transfer BRI">Transfer BRI</option>
+                        <option value="DANA BUMDes">DANA BUMDes</option>
+                    </select>
+                </div>
+                
+                <!-- Payment Details -->
+                <div id="payment-info" class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200 hidden">
+                    <div id="bri-info" class="hidden">
+                        <h4 class="font-semibold text-blue-800 mb-2">📱 Transfer BRI</h4>
+                        <div class="space-y-1 text-sm">
+                            <p><strong>Bank:</strong> BRI</p>
+                            <p><strong>No. Rekening:</strong> <span class="font-mono bg-white px-2 py-1 rounded">-3</span></p>
+                            <p><strong>Atas Nama:</strong> BUMDes Cikahuripan Makmur Mandiri Sejahtera</p>
+                            <p class="text-blue-700 mt-2">💡 Jangan lupa kirim bukti transfer!</p>
+                        </div>
+                    </div>
+                    
+                    <div id="dana-info" class="hidden">
+                        <h4 class="font-semibold text-blue-800 mb-2">💳 DANA BUMDes</h4>
+                        <div class="space-y-1 text-sm">
+                            <p><strong>Nomor DANA:</strong> <span class="font-mono bg-white px-2 py-1 rounded">082112505438</span></p>
+                            <p><strong>Atas Nama:</strong> BUMDes Cikahuripan</p>
+                            <p class="text-blue-700 mt-2">💡 Pastikan nomor tujuan benar!</p>
+                        </div>
+                    </div>
+                    
+                    <div id="tunai-info" class="hidden">
+                        <h4 class="font-semibold text-blue-800 mb-2">💰 Pembayaran Tunai</h4>
+                        <div class="space-y-1 text-sm">
+                            <p><strong>Lokasi:</strong> Kantor BUMDes Cikahuripan</p>
+                            <p><strong>Alamat:</strong> Desa Cikahuripan, Klapanunggal, Bogor</p>
+                            <p><strong>Jam Operasional:</strong> Senin-Jumat 08:00-16:00</p>
+                            <p class="text-blue-700 mt-2">💡 Bawa KTP dan bukti tagihan!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="processPayment()" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium">
+                        💰 Konfirmasi Bayar
+                    </button>
+                    <button onclick="closePaymentModal()" class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 font-medium">
+                        ❌ Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Bukti Bayar -->
+        <div id="receipt-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg p-4 md:p-6 w-full max-w-lg modal-content">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-3xl">✅</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-green-600 mb-2">Pembayaran Berhasil!</h3>
+                    <p class="text-gray-600">Bukti pembayaran telah dibuat</p>
+                </div>
+                
+                <div id="receipt-details" class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <!-- Detail bukti bayar akan diisi oleh JavaScript -->
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button onclick="printReceiptPDF()" class="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2">
+                        🖨️ Cetak PDF
+                    </button>
+                    <button onclick="sendReceiptWhatsApp()" class="bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2">
+                        📱 Kirim WhatsApp
+                    </button>
+                </div>
+                
+                <div class="mt-4">
+                    <button onclick="closeReceiptModal()" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 font-medium">
+                        ✖️ Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let customers = JSON.parse(localStorage.getItem('bumdes_customers') || '[]');
+        let bills = JSON.parse(localStorage.getItem('bumdes_bills') || '[]');
+        let expenses = JSON.parse(localStorage.getItem('bumdes_expenses') || '[]');
+        let reports = JSON.parse(localStorage.getItem('bumdes_reports') || '[]');
+        let currentBillId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentDate();
+            loadSampleData();
+            loadSampleExpenses();
+            showSection('pelanggan');
+            updateMonthFilters();
+            updateExpenseFilters();
+        });
+
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', options);
+            document.getElementById('current-month').textContent = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        }
+
+        function loadSampleData() {
+            if (customers.length === 0) {
+                customers = [
+                    {
+                        id: 1,
+                        name: 'Budi Santoso',
+                        phone: '081234567890',
+                        address: 'RT 02/RW 03, Kampung Raya, Jl. Raya Cikahuripan No. 15',
+                        package: 'Paket Standard 20 Mbps',
+                        price: 200000,
+                        activeDate: '2024-01-15'
+                    },
+                    {
+                        id: 2,
+                        name: 'Siti Nurhaliza',
+                        phone: '082345678901',
+                        address: 'RT 01/RW 02, Kampung Tengah, Jl. Masjid Cikahuripan No. 8',
+                        package: 'Paket Basic 10 Mbps',
+                        price: 150000,
+                        activeDate: '2024-02-01'
+                    },
+                    {
+                        id: 3,
+                        name: 'Ahmad Fauzi',
+                        phone: '083456789012',
+                        address: 'RT 01/RW 04, Kampung Masjid, Jl. Sekolah Cikahuripan No. 22',
+                        package: 'Paket Premium 50 Mbps',
+                        price: 350000,
+                        activeDate: '2024-01-20'
+                    },
+                    {
+                        id: 4,
+                        name: 'Dewi Sartika',
+                        phone: '084567890123',
+                        address: 'RT 01/RW 01, Kampung Babakan, Jl. Babakan No. 5',
+                        package: 'Paket Basic 10 Mbps',
+                        price: 150000,
+                        activeDate: '2024-02-10'
+                    },
+                    {
+                        id: 5,
+                        name: 'Joko Widodo',
+                        phone: '085678901234',
+                        address: 'RT 01/RW 05, Kampung Sekolah, Jl. Pendidikan No. 12',
+                        package: 'Paket Ultra 100 Mbps',
+                        price: 500000,
+                        activeDate: '2024-01-25'
+                    }
+                ];
+                saveCustomers();
+            }
+            renderCustomers();
+            updateRegionFilter();
+        }
+
+        function loadSampleExpenses() {
+            if (expenses.length === 0) {
+                const currentDate = new Date();
+                const currentMonth = currentDate.getMonth();
+                const currentYear = currentDate.getFullYear();
+                
+                expenses = [
+                    {
+                        id: 1,
+                        date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`,
+                        category: 'Bandwidth/Internet',
+                        description: 'Bayar bandwidth bulan ' + getMonthName(currentMonth) + ' ' + currentYear,
+                        amount: 2500000,
+                        paymentMethod: 'Transfer Bank',
+                        notes: 'Pembayaran rutin bulanan ke ISP'
+                    },
+                    {
+                        id: 2,
+                        date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-05`,
+                        category: 'Gaji Teknisi',
+                        description: 'Gaji teknisi bulan ' + getMonthName(currentMonth) + ' ' + currentYear,
+                        amount: 1500000,
+                        paymentMethod: 'Tunai',
+                        notes: 'Gaji 2 orang teknisi'
+                    },
+                    {
+                        id: 3,
+                        date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-10`,
+                        category: 'Peralatan Jaringan',
+                        description: 'Beli kabel UTP dan konektor RJ45',
+                        amount: 350000,
+                        paymentMethod: 'DANA',
+                        notes: 'Untuk instalasi pelanggan baru'
+                    },
+                    {
+                        id: 4,
+                        date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-15`,
+                        category: 'Listrik',
+                        description: 'Bayar listrik kantor dan tower',
+                        amount: 450000,
+                        paymentMethod: 'Transfer Bank',
+                        notes: 'Tagihan PLN bulan ini'
+                    }
+                ];
+                saveExpenses();
+            }
+        }
+
+        // Navigation
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
+                btn.classList.add('border-transparent', 'text-gray-600');
+            });
+            
+            document.getElementById(sectionName + '-section').classList.remove('hidden');
+            document.getElementById(sectionName + '-section').classList.add('fade-in');
+            
+            if (sectionName === 'pelanggan') {
+                renderCustomers();
+            } else if (sectionName === 'tagihan') {
+                renderBills();
+                updateBillsSummary();
+            } else if (sectionName === 'pengeluaran') {
+                renderExpenses();
+                updateExpenseSummary();
+            } else if (sectionName === 'laporan') {
+                renderReports();
+            }
+        }
+
+        // Customer Management
+        function showAddCustomerForm() {
+            document.getElementById('add-customer-form').classList.remove('hidden');
+            document.getElementById('customerActiveDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function hideAddCustomerForm() {
+            document.getElementById('add-customer-form').classList.add('hidden');
+            document.getElementById('add-customer-form').querySelector('form').reset();
+        }
+
+        function editCustomer(id) {
+            console.log('Edit customer called with ID:', id, 'Type:', typeof id);
+            console.log('Available customers:', customers.map(c => ({ id: c.id, name: c.name, idType: typeof c.id })));
+            
+            // Try multiple ways to find the customer
+            let customer = customers.find(c => c.id == id); // Use loose equality first
+            
+            if (!customer) {
+                // Try with parseInt conversion
+                const numericId = parseInt(id);
+                customer = customers.find(c => c.id === numericId);
+            }
+            
+            if (!customer) {
+                // Try with string conversion
+                const stringId = String(id);
+                customer = customers.find(c => String(c.id) === stringId);
+            }
+            
+            if (!customer) {
+                console.error('Customer not found with ID:', id);
+                showNotification('Pelanggan tidak ditemukan! ID: ' + id, 'error');
+                return;
+            }
+
+            console.log('Found customer:', customer);
+
+            // Hide other forms
+            hideAddCustomerForm();
+            hideImportExcelForm();
+
+            // Fill edit form with customer data
+            document.getElementById('editCustomerId').value = customer.id;
+            document.getElementById('editCustomerName').value = customer.name;
+            document.getElementById('editCustomerPhone').value = customer.phone;
+            document.getElementById('editCustomerAddress').value = customer.address;
+            document.getElementById('editCustomerPackage').value = customer.package;
+            document.getElementById('editCustomerPrice').value = customer.price;
+            document.getElementById('editCustomerActiveDate').value = customer.activeDate;
+
+            // Show edit form
+            document.getElementById('edit-customer-form').classList.remove('hidden');
+            
+            // Scroll to form
+            document.getElementById('edit-customer-form').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+
+        function hideEditCustomerForm() {
+            document.getElementById('edit-customer-form').classList.add('hidden');
+            document.getElementById('edit-customer-form').querySelector('form').reset();
+        }
+
+        function updateCustomer(event) {
+            event.preventDefault();
+            
+            const customerId = parseInt(document.getElementById('editCustomerId').value);
+            const customerIndex = customers.findIndex(c => c.id === customerId);
+            
+            if (customerIndex === -1) {
+                showNotification('Pelanggan tidak ditemukan!', 'error');
+                return;
+            }
+
+            const oldCustomer = { ...customers[customerIndex] };
+            
+            // Update customer data
+            customers[customerIndex] = {
+                ...customers[customerIndex],
+                name: document.getElementById('editCustomerName').value,
+                phone: document.getElementById('editCustomerPhone').value,
+                address: document.getElementById('editCustomerAddress').value,
+                package: document.getElementById('editCustomerPackage').value,
+                price: parseInt(document.getElementById('editCustomerPrice').value),
+                activeDate: document.getElementById('editCustomerActiveDate').value
+            };
+
+            // Check if package or price changed
+            const packageChanged = oldCustomer.package !== customers[customerIndex].package;
+            const priceChanged = oldCustomer.price !== customers[customerIndex].price;
+
+            saveCustomers();
+            renderCustomers();
+            updateRegionFilter();
+            hideEditCustomerForm();
+            
+            let message = 'Data pelanggan berhasil diupdate!';
+            if (packageChanged || priceChanged) {
+                message += ' Perubahan paket/harga akan berlaku untuk tagihan bulan berikutnya.';
+            }
+            
+            showNotification(message, 'success');
+        }
+
+        // Filter Functions
+        function getFilteredCustomers() {
+            const searchTerm = document.getElementById('customer-search').value.toLowerCase();
+            const regionFilter = document.getElementById('region-filter').value;
+            const packageFilter = document.getElementById('package-filter').value;
+            
+            let filtered = customers;
+            
+            // Search by name or phone
+            if (searchTerm) {
+                filtered = filtered.filter(customer => 
+                    customer.name.toLowerCase().includes(searchTerm) ||
+                    customer.phone.includes(searchTerm)
+                );
+            }
+            
+            // Filter by region (extracted from address)
+            if (regionFilter) {
+                filtered = filtered.filter(customer => {
+                    const customerRegion = extractRegionFromAddress(customer.address);
+                    return customerRegion === regionFilter;
+                });
+            }
+            
+            // Filter by package
+            if (packageFilter) {
+                filtered = filtered.filter(customer => customer.package === packageFilter);
+            }
+            
+            return filtered;
+        }
+
+        function filterCustomers() {
+            renderCustomers();
+            updateFilterSummary();
+        }
+
+        function clearAllFilters() {
+            document.getElementById('customer-search').value = '';
+            document.getElementById('region-filter').value = '';
+            document.getElementById('package-filter').value = '';
+            filterCustomers();
+        }
+
+        function updateRegionFilter() {
+            // Extract regions from customer addresses
+            const regions = customers.map(c => extractRegionFromAddress(c.address));
+            const uniqueRegions = [...new Set(regions)].filter(r => r !== 'Belum Diset').sort();
+            
+            const regionFilter = document.getElementById('region-filter');
+            regionFilter.innerHTML = '<option value="">Semua Wilayah</option>';
+            
+            uniqueRegions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region;
+                option.textContent = region;
+                regionFilter.appendChild(option);
+            });
+            
+            // Add "Belum Diset" option if there are customers without proper RT/RW
+            const hasUnsetRegions = regions.includes('Belum Diset');
+            if (hasUnsetRegions) {
+                const option = document.createElement('option');
+                option.value = 'Belum Diset';
+                option.textContent = 'Belum Diset';
+                regionFilter.appendChild(option);
+            }
+        }
+
+        function updateFilterSummary() {
+            const filteredCustomers = getFilteredCustomers();
+            const totalCustomers = customers.length;
+            const filteredCount = filteredCustomers.length;
+            
+            const searchTerm = document.getElementById('customer-search').value;
+            const regionFilter = document.getElementById('region-filter').value;
+            const packageFilter = document.getElementById('package-filter').value;
+            
+            let summaryText = `Menampilkan ${filteredCount} dari ${totalCustomers} pelanggan`;
+            
+            const activeFilters = [];
+            if (searchTerm) activeFilters.push(`pencarian: "${searchTerm}"`);
+            if (regionFilter) activeFilters.push(`wilayah: ${regionFilter}`);
+            if (packageFilter) activeFilters.push(`paket: ${packageFilter.replace('Paket ', '')}`);
+            
+            if (activeFilters.length > 0) {
+                summaryText += ` (filter: ${activeFilters.join(', ')})`;
+            }
+            
+            document.getElementById('filter-summary').textContent = summaryText;
+        }
+
+        function showImportExcelForm() {
+            document.getElementById('import-excel-form').classList.remove('hidden');
+            hideAddCustomerForm();
+        }
+
+        function hideImportExcelForm() {
+            document.getElementById('import-excel-form').classList.add('hidden');
+            document.getElementById('excel-file').value = '';
+        }
+
+        function downloadExcelTemplate() {
+            try {
+                // Check if XLSX is loaded
+                if (typeof XLSX === 'undefined') {
+                    showNotification('Library Excel belum dimuat. Silakan refresh halaman!', 'error');
+                    return;
+                }
+
+                const templateData = [
+                    ['Nama', 'No WA', 'Alamat Lengkap (RT/RW, Kampung, Jalan)', 'Paket', 'Harga', 'Tanggal Aktif'],
+                    ['Contoh: Budi Santoso', '081234567890', 'RT 02/RW 03, Kampung Raya, Jl. Raya Cikahuripan No. 15', 'Paket Standard 20 Mbps', 200000, '2024-01-15'],
+                    ['', '', 'RT 01/RW 01, Kampung Babakan, Jl. ...', 'Paket Basic 10 Mbps', 150000, ''],
+                    ['', '', 'RT 01/RW 02, Kampung Tengah, Jl. ...', 'Paket Premium 50 Mbps', 350000, ''],
+                    ['', '', 'RT 01/RW 03, Kampung Raya, Jl. ...', 'Paket Ultra 100 Mbps', 500000, '']
+                ];
+
+                // Create worksheet
+                const ws = XLSX.utils.aoa_to_sheet(templateData);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    { wch: 20 }, // Nama
+                    { wch: 15 }, // No WA
+                    { wch: 50 }, // Alamat Lengkap
+                    { wch: 25 }, // Paket
+                    { wch: 12 }, // Harga
+                    { wch: 15 }  // Tanggal Aktif
+                ];
+
+                // Style the header row
+                const headerStyle = {
+                    font: { bold: true },
+                    fill: { fgColor: { rgb: "CCCCCC" } },
+                    alignment: { horizontal: "center" }
+                };
+
+                // Apply header styling
+                for (let col = 0; col < 6; col++) {
+                    const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+                    if (!ws[cellRef]) ws[cellRef] = {};
+                    ws[cellRef].s = headerStyle;
+                }
+
+                // Create workbook and add worksheet
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Template Pelanggan');
+                
+                // Create organized filename with folder structure for templates
+                const currentDate = new Date();
+                const year = currentDate.getFullYear();
+                const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                const folderName = `BUMDes-Cikahuripan/${year}/${month}-${getMonthName(currentDate.getMonth())}/Template-Excel`;
+                const today = currentDate.toISOString().split('T')[0];
+                const filename = `${folderName}/Template-Data-Pelanggan-${today}.xlsx`;
+                
+                // Write file
+                XLSX.writeFile(wb, filename);
+                
+                showNotification(`Template Excel tersimpan di folder: ${folderName}/`, 'success');
+                
+            } catch (error) {
+                console.error('Error creating Excel template:', error);
+                showNotification('Gagal membuat template Excel. Silakan coba lagi!', 'error');
+            }
+        }
+
+        function importFromExcel() {
+            const fileInput = document.getElementById('excel-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('Silakan pilih file Excel terlebih dahulu!', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Skip header row
+                    const rows = jsonData.slice(1);
+                    let importedCount = 0;
+                    let errorCount = 0;
+                    
+                    rows.forEach((row, index) => {
+                        // Skip empty rows
+                        if (!row[0] || row[0].toString().trim() === '') return;
+                        
+                        try {
+                            const newCustomer = {
+                                id: Date.now() + Math.random() + index,
+                                name: row[0]?.toString().trim() || '',
+                                phone: row[1]?.toString().trim() || '',
+                                address: row[2]?.toString().trim() || '',
+                                package: row[3]?.toString().trim() || '',
+                                price: parseInt(row[4]) || 0,
+                                activeDate: formatExcelDate(row[5]) || new Date().toISOString().split('T')[0]
+                            };
+                            
+                            // Validate required fields
+                            if (newCustomer.name && newCustomer.phone && newCustomer.package && newCustomer.price > 0) {
+                                customers.push(newCustomer);
+                                importedCount++;
+                            } else {
+                                errorCount++;
+                            }
+                        } catch (error) {
+                            errorCount++;
+                        }
+                    });
+                    
+                    saveCustomers();
+                    renderCustomers();
+                    hideImportExcelForm();
+                    
+                    if (importedCount > 0) {
+                        showNotification(`${importedCount} pelanggan berhasil diimport! ${errorCount > 0 ? `${errorCount} data error.` : ''}`, 'success');
+                    } else {
+                        showNotification('Tidak ada data valid yang dapat diimport!', 'error');
+                    }
+                    
+                } catch (error) {
+                    showNotification('Error membaca file Excel. Pastikan format file benar!', 'error');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function formatExcelDate(excelDate) {
+            if (!excelDate) return null;
+            
+            // If it's already a string in YYYY-MM-DD format
+            if (typeof excelDate === 'string' && excelDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return excelDate;
+            }
+            
+            // If it's an Excel serial number
+            if (typeof excelDate === 'number') {
+                const date = new Date((excelDate - 25569) * 86400 * 1000);
+                return date.toISOString().split('T')[0];
+            }
+            
+            // Try to parse as date string
+            try {
+                const date = new Date(excelDate);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+            } catch (e) {
+                // Ignore parsing errors
+            }
+            
+            return null;
+        }
+
+        function addCustomer(event) {
+            event.preventDefault();
+            
+            const address = document.getElementById('customerAddress').value;
+            
+            const newCustomer = {
+                id: Date.now(),
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                address: address,
+                package: document.getElementById('customerPackage').value,
+                price: parseInt(document.getElementById('customerPrice').value),
+                activeDate: document.getElementById('customerActiveDate').value
+            };
+
+            customers.push(newCustomer);
+            saveCustomers();
+            renderCustomers();
+            updateRegionFilter();
+            hideAddCustomerForm();
+            
+            showNotification('Pelanggan berhasil ditambahkan!', 'success');
+        }
+
+        function deleteCustomer(id) {
+            const customerName = customers.find(c => c.id === id)?.name;
+            
+            // Custom confirmation dialog
+            const confirmDiv = document.createElement('div');
+            confirmDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            confirmDiv.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
+                    <h3 class="text-lg font-bold mb-2">Konfirmasi Hapus</h3>
+                    <p class="text-gray-600 mb-4">Yakin ingin menghapus pelanggan "${customerName}"?</p>
+                    <div class="flex gap-3">
+                        <button onclick="confirmDelete(${id})" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Hapus</button>
+                        <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600">Batal</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmDiv);
+        }
+
+        function confirmDelete(id) {
+            customers = customers.filter(c => c.id !== id);
+            bills = bills.filter(b => b.customerId !== id);
+            saveCustomers();
+            saveBills();
+            renderCustomers();
+            document.querySelector('.fixed').remove();
+            showNotification('Pelanggan berhasil dihapus!', 'success');
+        }
+
+        function renderCustomers() {
+            const tbody = document.getElementById('customers-table');
+            tbody.innerHTML = '';
+
+            const filteredCustomers = getFilteredCustomers();
+
+            filteredCustomers.forEach((customer, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">${index + 1}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm">${customer.name}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">${customer.phone}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm hidden lg:table-cell">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            📍 ${extractRegionFromAddress(customer.address)}
+                        </span>
+                    </td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm hidden md:table-cell">${customer.address}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">${customer.package}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">Rp ${customer.price.toLocaleString('id-ID')}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm hidden sm:table-cell">${new Date(customer.activeDate).toLocaleDateString('id-ID')}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3">
+                        <div class="flex gap-1 md:gap-2">
+                            <button onclick="editCustomer(${customer.id})" class="bg-yellow-500 text-white px-2 py-2 rounded text-xs hover:bg-yellow-600 touch-manipulation">
+                                ✏️ <span class="hidden sm:inline">Edit</span>
+                            </button>
+                            <button onclick="deleteCustomer(${customer.id})" class="bg-red-500 text-white px-2 py-2 rounded text-xs hover:bg-red-600 touch-manipulation">
+                                🗑️ <span class="hidden sm:inline">Hapus</span>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            updateFilterSummary();
+        }
+
+        // Expense Management
+        function showAddExpenseForm() {
+            document.getElementById('add-expense-form').classList.remove('hidden');
+            document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+            hideEditExpenseForm();
+        }
+
+        function hideAddExpenseForm() {
+            document.getElementById('add-expense-form').classList.add('hidden');
+            document.getElementById('add-expense-form').querySelector('form').reset();
+        }
+
+        function addExpense(event) {
+            event.preventDefault();
+            
+            const newExpense = {
+                id: Date.now(),
+                date: document.getElementById('expenseDate').value,
+                category: document.getElementById('expenseCategory').value,
+                description: document.getElementById('expenseDescription').value,
+                amount: parseInt(document.getElementById('expenseAmount').value),
+                paymentMethod: document.getElementById('expensePaymentMethod').value,
+                notes: document.getElementById('expenseNotes').value || ''
+            };
+
+            expenses.push(newExpense);
+            saveExpenses();
+            renderExpenses();
+            updateExpenseSummary();
+            updateExpenseFilters();
+            hideAddExpenseForm();
+            
+            showNotification('Pengeluaran berhasil ditambahkan!', 'success');
+        }
+
+        function editExpense(id) {
+            const expense = expenses.find(e => e.id === id);
+            if (!expense) {
+                showNotification('Pengeluaran tidak ditemukan!', 'error');
+                return;
+            }
+
+            hideAddExpenseForm();
+
+            document.getElementById('editExpenseId').value = expense.id;
+            document.getElementById('editExpenseDate').value = expense.date;
+            document.getElementById('editExpenseCategory').value = expense.category;
+            document.getElementById('editExpenseDescription').value = expense.description;
+            document.getElementById('editExpenseAmount').value = expense.amount;
+            document.getElementById('editExpensePaymentMethod').value = expense.paymentMethod;
+            document.getElementById('editExpenseNotes').value = expense.notes;
+
+            document.getElementById('edit-expense-form').classList.remove('hidden');
+            document.getElementById('edit-expense-form').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+
+        function hideEditExpenseForm() {
+            document.getElementById('edit-expense-form').classList.add('hidden');
+            document.getElementById('edit-expense-form').querySelector('form').reset();
+        }
+
+        function updateExpense(event) {
+            event.preventDefault();
+            
+            const expenseId = parseInt(document.getElementById('editExpenseId').value);
+            const expenseIndex = expenses.findIndex(e => e.id === expenseId);
+            
+            if (expenseIndex === -1) {
+                showNotification('Pengeluaran tidak ditemukan!', 'error');
+                return;
+            }
+
+            expenses[expenseIndex] = {
+                ...expenses[expenseIndex],
+                date: document.getElementById('editExpenseDate').value,
+                category: document.getElementById('editExpenseCategory').value,
+                description: document.getElementById('editExpenseDescription').value,
+                amount: parseInt(document.getElementById('editExpenseAmount').value),
+                paymentMethod: document.getElementById('editExpensePaymentMethod').value,
+                notes: document.getElementById('editExpenseNotes').value
+            };
+
+            saveExpenses();
+            renderExpenses();
+            updateExpenseSummary();
+            hideEditExpenseForm();
+            
+            showNotification('Data pengeluaran berhasil diupdate!', 'success');
+        }
+
+        function deleteExpense(id) {
+            const expense = expenses.find(e => e.id === id);
+            
+            const confirmDiv = document.createElement('div');
+            confirmDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            confirmDiv.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
+                    <h3 class="text-lg font-bold mb-2">Konfirmasi Hapus</h3>
+                    <p class="text-gray-600 mb-4">Yakin ingin menghapus pengeluaran "${expense.description}"?</p>
+                    <div class="flex gap-3">
+                        <button onclick="confirmDeleteExpense(${id})" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Hapus</button>
+                        <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600">Batal</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmDiv);
+        }
+
+        function confirmDeleteExpense(id) {
+            expenses = expenses.filter(e => e.id !== id);
+            saveExpenses();
+            renderExpenses();
+            updateExpenseSummary();
+            document.querySelector('.fixed').remove();
+            showNotification('Pengeluaran berhasil dihapus!', 'success');
+        }
+
+        function renderExpenses() {
+            const tbody = document.getElementById('expenses-table');
+            tbody.innerHTML = '';
+
+            const filteredExpenses = getFilteredExpenses();
+            
+            filteredExpenses.forEach((expense, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const categoryIcon = getCategoryIcon(expense.category);
+                
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">${index + 1}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">${new Date(expense.date).toLocaleDateString('id-ID')}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">${categoryIcon} ${expense.category}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">${expense.description}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-semibold text-red-600">Rp ${expense.amount.toLocaleString('id-ID')}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm hidden sm:table-cell">${expense.paymentMethod}</td>
+                    <td class="border border-gray-300 px-2 md:px-4 py-2 md:py-3">
+                        <div class="flex gap-1 md:gap-2">
+                            <button onclick="editExpense(${expense.id})" class="bg-yellow-500 text-white px-2 py-2 rounded text-xs hover:bg-yellow-600 touch-manipulation">
+                                ✏️ <span class="hidden sm:inline">Edit</span>
+                            </button>
+                            <button onclick="deleteExpense(${expense.id})" class="bg-red-500 text-white px-2 py-2 rounded text-xs hover:bg-red-600 touch-manipulation">
+                                🗑️ <span class="hidden sm:inline">Hapus</span>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'Bandwidth/Internet': '🌐',
+                'Gaji Teknisi': '👨‍💻',
+                'Peralatan Jaringan': '🔧',
+                'Biaya Pasang': '🏗️',
+                'Maintenance': '🔧',
+                'Listrik': '⚡',
+                'Transportasi': '🚗',
+                'Administrasi': '📋',
+                'Lainnya': '📦'
+            };
+            return icons[category] || '📦';
+        }
+
+        function getFilteredExpenses() {
+            const monthFilter = document.getElementById('expense-month-filter').value;
+            const categoryFilter = document.getElementById('expense-category-filter').value;
+            
+            let filtered = expenses;
+            
+            if (monthFilter) {
+                filtered = filtered.filter(expense => {
+                    const expenseMonth = expense.date.substring(0, 7); // YYYY-MM
+                    return expenseMonth === monthFilter;
+                });
+            }
+            
+            if (categoryFilter) {
+                filtered = filtered.filter(expense => expense.category === categoryFilter);
+            }
+            
+            return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        function updateExpenseSummary() {
+            const filteredExpenses = getFilteredExpenses();
+            const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+            const expenseCount = filteredExpenses.length;
+            const averageExpense = expenseCount > 0 ? totalExpenses / expenseCount : 0;
+
+            document.getElementById('total-expenses').textContent = `Rp ${totalExpenses.toLocaleString('id-ID')}`;
+            document.getElementById('expense-count').textContent = expenseCount;
+            document.getElementById('average-expense').textContent = `Rp ${Math.round(averageExpense).toLocaleString('id-ID')}`;
+        }
+
+        function filterExpenses() {
+            renderExpenses();
+            updateExpenseSummary();
+        }
+
+        function updateExpenseFilters() {
+            const uniqueMonths = [...new Set(expenses.map(e => e.date.substring(0, 7)))].sort().reverse();
+            
+            const monthFilter = document.getElementById('expense-month-filter');
+            monthFilter.innerHTML = '<option value="">Semua Bulan</option>';
+            
+            uniqueMonths.forEach(month => {
+                const [year, monthNum] = month.split('-');
+                const monthName = getMonthName(parseInt(monthNum) - 1);
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = `${monthName} ${year}`;
+                monthFilter.appendChild(option);
+            });
+        }
+
+        function exportExpenseReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('BUMDes Cikahuripan Makmur Mandiri Sejahtera', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text('Desa Cikahuripan, Klapanunggal, Bogor', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('LAPORAN PENGELUARAN', 105, 45, { align: 'center' });
+            
+            // Date
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 105, 55, { align: 'center' });
+            
+            // Line separator
+            doc.line(20, 60, 190, 60);
+            
+            // Summary
+            const filteredExpenses = getFilteredExpenses();
+            const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Total Pengeluaran: Rp ${totalExpenses.toLocaleString('id-ID')}`, 20, 75);
+            doc.text(`Jumlah Transaksi: ${filteredExpenses.length}`, 20, 85);
+            
+            // Table headers
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'bold');
+            const headers = ['Tanggal', 'Kategori', 'Deskripsi', 'Jumlah'];
+            const colWidths = [25, 35, 80, 30];
+            let xPos = 20;
+            
+            headers.forEach((header, i) => {
+                doc.text(header, xPos, 100);
+                xPos += colWidths[i];
+            });
+            
+            // Table data
+            doc.setFont(undefined, 'normal');
+            let yPos = 110;
+            
+            filteredExpenses.forEach(expense => {
+                if (yPos > 270) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                const rowData = [
+                    new Date(expense.date).toLocaleDateString('id-ID'),
+                    expense.category,
+                    expense.description.length > 35 ? expense.description.substring(0, 32) + '...' : expense.description,
+                    `Rp ${(expense.amount / 1000).toFixed(0)}K`
+                ];
+                
+                xPos = 20;
+                rowData.forEach((data, i) => {
+                    doc.text(data, xPos, yPos);
+                    xPos += colWidths[i];
+                });
+                yPos += 8;
+            });
+            
+            // Create organized filename
+            const currentDate = new Date();
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const folderName = `BUMDes-Cikahuripan/${year}/${month}-${getMonthName(currentDate.getMonth())}/Laporan-Pengeluaran`;
+            const fileName = `${folderName}/Laporan-Pengeluaran-${currentDate.toISOString().split('T')[0]}.pdf`;
+            
+            doc.save(fileName);
+            showNotification(`Laporan pengeluaran tersimpan di folder: ${folderName}/`, 'success');
+        }
+
+        // Bill Management
+        function generateMonthlyBills() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            
+            let newBillsCount = 0;
+            
+            customers.forEach(customer => {
+                const customerActiveDate = new Date(customer.activeDate);
+                if (customerActiveDate <= now) {
+                    const existingBill = bills.find(b => 
+                        b.customerId === customer.id && 
+                        b.period === monthKey
+                    );
+                    
+                    if (!existingBill) {
+                        const dueDate = new Date(currentYear, currentMonth, 5);
+                        
+                        const newBill = {
+                            id: Date.now() + Math.random(),
+                            customerId: customer.id,
+                            customerName: customer.name,
+                            package: customer.package,
+                            amount: customer.price,
+                            period: monthKey,
+                            periodDisplay: now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+                            dueDate: dueDate.toISOString().split('T')[0],
+                            status: 'Belum Bayar',
+                            paymentDate: null,
+                            paymentMethod: null,
+                            createdDate: now.toISOString().split('T')[0]
+                        };
+                        
+                        bills.push(newBill);
+                        newBillsCount++;
+                    }
+                }
+            });
+            
+            saveBills();
+            updateReports();
+            
+            if (newBillsCount > 0) {
+                showNotification(`${newBillsCount} tagihan baru berhasil dibuat!`, 'success');
+            } else {
+                showNotification('Semua tagihan bulan ini sudah dibuat!', 'info');
+            }
+            
+            renderBills();
+            updateBillsSummary();
+        }
+
+        function renderBills() {
+            const tbody = document.getElementById('bills-table');
+            tbody.innerHTML = '';
+
+            const filteredBills = getFilteredBills();
+            
+            filteredBills.forEach((bill, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const statusClass = bill.status === 'Lunas' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                const dueDateClass = new Date(bill.dueDate) < new Date() && bill.status !== 'Lunas' ? 'text-red-600 font-bold' : '';
+                
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-4 py-3">${index + 1}</td>
+                    <td class="border border-gray-300 px-4 py-3 font-medium">${bill.customerName}</td>
+                    <td class="border border-gray-300 px-4 py-3">${bill.package}</td>
+                    <td class="border border-gray-300 px-4 py-3">${bill.periodDisplay}</td>
+                    <td class="border border-gray-300 px-4 py-3 font-semibold">Rp ${bill.amount.toLocaleString('id-ID')}</td>
+                    <td class="border border-gray-300 px-4 py-3 ${dueDateClass}">${new Date(bill.dueDate).toLocaleDateString('id-ID')}</td>
+                    <td class="border border-gray-300 px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">
+                            ${bill.status}
+                        </span>
+                    </td>
+                    <td class="border border-gray-300 px-4 py-3">
+                        <div class="flex gap-2">
+                            ${bill.status === 'Belum Bayar' ? 
+                                `<button onclick="openPaymentModal(${bill.id})" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">💰 Bayar</button>` :
+                                `<button onclick="printReceipt(${bill.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">🖨️ Cetak</button>`
+                            }
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getFilteredBills() {
+            const monthFilter = document.getElementById('bill-month-filter').value;
+            if (!monthFilter) return bills;
+            return bills.filter(bill => bill.period === monthFilter);
+        }
+
+        function updateBillsSummary() {
+            const filteredBills = getFilteredBills();
+            const totalBills = filteredBills.length;
+            const paidBills = filteredBills.filter(b => b.status === 'Lunas').length;
+            const unpaidBills = totalBills - paidBills;
+            const totalRevenue = filteredBills.filter(b => b.status === 'Lunas').reduce((sum, b) => sum + b.amount, 0);
+
+            document.getElementById('total-bills').textContent = totalBills;
+            document.getElementById('paid-bills').textContent = paidBills;
+            document.getElementById('unpaid-bills').textContent = unpaidBills;
+            document.getElementById('total-revenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+        }
+
+        // Payment Management
+        function openPaymentModal(billId) {
+            currentBillId = billId;
+            const bill = bills.find(b => b.id === billId);
+            
+            document.getElementById('payment-details').innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold">${bill.customerName}</h4>
+                    <p class="text-sm text-gray-600">${bill.package}</p>
+                    <p class="text-sm text-gray-600">Periode: ${bill.periodDisplay}</p>
+                    <p class="text-lg font-bold text-green-600 mt-2">Rp ${bill.amount.toLocaleString('id-ID')}</p>
+                </div>
+            `;
+            
+            document.getElementById('payment-modal').classList.remove('hidden');
+            document.getElementById('payment-modal').classList.add('flex');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+            document.getElementById('payment-modal').classList.remove('flex');
+            currentBillId = null;
+        }
+
+        function showPaymentDetails() {
+            const paymentMethod = document.getElementById('payment-method').value;
+            const paymentInfo = document.getElementById('payment-info');
+            const briInfo = document.getElementById('bri-info');
+            const danaInfo = document.getElementById('dana-info');
+            const tunaiInfo = document.getElementById('tunai-info');
+            
+            // Hide all payment info first
+            briInfo.classList.add('hidden');
+            danaInfo.classList.add('hidden');
+            tunaiInfo.classList.add('hidden');
+            
+            // Show relevant payment info
+            if (paymentMethod === 'Transfer BRI') {
+                paymentInfo.classList.remove('hidden');
+                briInfo.classList.remove('hidden');
+            } else if (paymentMethod === 'DANA BUMDes') {
+                paymentInfo.classList.remove('hidden');
+                danaInfo.classList.remove('hidden');
+            } else if (paymentMethod === 'Tunai di Kantor BUMDes') {
+                paymentInfo.classList.remove('hidden');
+                tunaiInfo.classList.remove('hidden');
+            } else {
+                paymentInfo.classList.add('hidden');
+            }
+        }
+
+        function processPayment() {
+            const paymentMethod = document.getElementById('payment-method').value;
+            const bill = bills.find(b => b.id === currentBillId);
+            
+            bill.status = 'Lunas';
+            bill.paymentDate = new Date().toISOString().split('T')[0];
+            bill.paymentMethod = paymentMethod;
+            
+            saveBills();
+            updateReports();
+            renderBills();
+            updateBillsSummary();
+            closePaymentModal();
+            
+            showNotification('Pembayaran berhasil diproses!', 'success');
+            
+            // Show receipt options modal
+            setTimeout(() => showReceiptModal(currentBillId), 500);
+        }
+
+        // Receipt Modal Management
+        let currentReceiptBillId = null;
+
+        function showReceiptModal(billId) {
+            currentReceiptBillId = billId;
+            const bill = bills.find(b => b.id === billId);
+            
+            document.getElementById('receipt-details').innerHTML = `
+                <div class="text-center">
+                    <h4 class="font-bold text-lg mb-3">${bill.customerName}</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="text-left">
+                            <p class="text-gray-600">No. Transaksi:</p>
+                            <p class="font-semibold">${bill.id.toString().slice(-8)}</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-600">Tanggal Bayar:</p>
+                            <p class="font-semibold">${new Date(bill.paymentDate).toLocaleDateString('id-ID')}</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-600">Paket Internet:</p>
+                            <p class="font-semibold">${bill.package}</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-600">Periode:</p>
+                            <p class="font-semibold">${bill.periodDisplay}</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-600">Metode Bayar:</p>
+                            <p class="font-semibold">${bill.paymentMethod}</p>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-600">Jumlah:</p>
+                            <p class="font-bold text-green-600 text-lg">Rp ${bill.amount.toLocaleString('id-ID')}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('receipt-modal').classList.remove('hidden');
+            document.getElementById('receipt-modal').classList.add('flex');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+            document.getElementById('receipt-modal').classList.remove('flex');
+            currentReceiptBillId = null;
+        }
+
+        function printReceiptPDF() {
+            if (currentReceiptBillId) {
+                printReceipt(currentReceiptBillId);
+            }
+        }
+
+        function sendReceiptWhatsApp() {
+            const bill = bills.find(b => b.id === currentReceiptBillId);
+            const customer = customers.find(c => c.id === bill.customerId);
+            
+            if (!customer || !customer.phone) {
+                showNotification('Nomor WhatsApp pelanggan tidak ditemukan!', 'error');
+                return;
+            }
+
+            // Create receipt message
+            const message = `*BUKTI PEMBAYARAN INTERNET*
+*BUMDes Cikahuripan Makmur Mandiri Sejahtera*
+
+📋 *Detail Pembayaran:*
+• No. Transaksi: ${bill.id.toString().slice(-8)}
+• Nama: ${bill.customerName}
+• Paket: ${bill.package}
+• Periode: ${bill.periodDisplay}
+• Jumlah: Rp ${bill.amount.toLocaleString('id-ID')}
+• Tanggal Bayar: ${new Date(bill.paymentDate).toLocaleDateString('id-ID')}
+• Metode: ${bill.paymentMethod}
+• Status: ✅ ${bill.status}
+
+Terima kasih atas pembayaran Anda! 🙏
+
+_Layanan Internet BUMDes Cikahuripan_
+_Desa Cikahuripan, Klapanunggal, Bogor_`;
+
+            // Format phone number (remove leading 0 and add 62)
+            let phoneNumber = customer.phone.replace(/^0/, '62');
+            
+            // Create WhatsApp URL
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            
+            // Open WhatsApp in new tab
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+            
+            showNotification('Bukti pembayaran siap dikirim via WhatsApp!', 'success');
+        }
+
+        // Receipt Printing
+        function printReceipt(billId) {
+            showPrintOptionsModal(billId);
+        }
+
+        function showPrintOptionsModal(billId) {
+            const bill = bills.find(b => b.id === billId);
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                    <h3 class="text-lg font-bold mb-4">📄 Pilih Cara Cetak</h3>
+                    <div class="space-y-3">
+                        <button onclick="printDirectToThermal(${billId})" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
+                            🖨️ Cetak Langsung ke Printer Thermal
+                        </button>
+                        <button onclick="printToA4(${billId})" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                            📄 Cetak ke Kertas A4
+                        </button>
+                        <button onclick="downloadReceiptPDF(${billId})" class="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2">
+                            💾 Download PDF
+                        </button>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()" class="w-full mt-4 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600">
+                        ❌ Batal
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function printDirectToThermal(billId) {
+            const bill = bills.find(b => b.id === billId);
+            
+            // Create thermal receipt HTML
+            const receiptHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Bukti Pembayaran</title>
+                    <style>
+                        @page {
+                            size: 58mm auto;
+                            margin: 2mm;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 0; }
+                            .no-print { display: none !important; }
+                        }
+                        body {
+                            font-family: 'Courier New', monospace;
+                            font-size: 10px;
+                            line-height: 1.2;
+                            width: 54mm;
+                            margin: 0;
+                            padding: 2mm;
+                            color: #000;
+                        }
+                        .center { text-align: center; }
+                        .bold { font-weight: bold; }
+                        .large { font-size: 12px; }
+                        .separator { 
+                            border-top: 1px dashed #000; 
+                            margin: 3mm 0; 
+                        }
+                        .row {
+                            display: flex;
+                            justify-content: space-between;
+                            margin: 1mm 0;
+                        }
+                        .amount {
+                            font-size: 14px;
+                            font-weight: bold;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="center bold large">
+                        BUMDES CIKAHURIPAN
+                    </div>
+                    <div class="center">
+                        Makmur Mandiri Sejahtera
+                    </div>
+                    <div class="center">
+                        Desa Cikahuripan, Klapanunggal
+                    </div>
+                    <div class="center">Bogor</div>
+                    
+                    <div class="separator"></div>
+                    
+                    <div class="center bold">BUKTI PEMBAYARAN INTERNET</div>
+                    
+                    <div class="separator"></div>
+                    
+                    <div class="row">
+                        <span>No. Transaksi:</span>
+                        <span class="bold">${bill.id.toString().slice(-8)}</span>
+                    </div>
+                    
+                    <div class="row">
+                        <span>Tanggal:</span>
+                        <span>${new Date(bill.paymentDate).toLocaleDateString('id-ID')}</span>
+                    </div>
+                    
+                    <div class="row">
+                        <span>Waktu:</span>
+                        <span>${new Date().toLocaleTimeString('id-ID')}</span>
+                    </div>
+                    
+                    <div class="separator"></div>
+                    
+                    <div class="bold">Nama: ${bill.customerName}</div>
+                    <div>Paket: ${bill.package}</div>
+                    <div>Periode: ${bill.periodDisplay}</div>
+                    <div>Metode: ${bill.paymentMethod}</div>
+                    
+                    <div class="separator"></div>
+                    
+                    <div class="row">
+                        <span class="bold">TOTAL BAYAR:</span>
+                        <span class="bold amount">Rp ${bill.amount.toLocaleString('id-ID')}</span>
+                    </div>
+                    
+                    <div class="row">
+                        <span>Status:</span>
+                        <span class="bold">${bill.status}</span>
+                    </div>
+                    
+                    <div class="separator"></div>
+                    
+                    <div class="center">Terima kasih atas</div>
+                    <div class="center">pembayaran Anda!</div>
+                    
+                    <div class="center" style="margin-top: 3mm; font-size: 8px;">
+                        Layanan Internet BUMDes Cikahuripan
+                    </div>
+                    
+                    <div class="separator"></div>
+                </body>
+                </html>
+            `;
+            
+            // Create new window for printing
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(receiptHTML);
+            printWindow.document.close();
+            
+            // Wait for content to load then print
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                    
+                    // Listen for print completion events
+                    printWindow.addEventListener('afterprint', function() {
+                        printWindow.close();
+                        // Close modal after print is done
+                        const modal = document.querySelector('.fixed');
+                        if (modal) modal.remove();
+                        showNotification('Struk berhasil dicetak ke printer thermal!', 'success');
+                    });
+                    
+                    // Fallback: close after delay if afterprint doesn't fire
+                    setTimeout(() => {
+                        if (!printWindow.closed) {
+                            printWindow.close();
+                            const modal = document.querySelector('.fixed');
+                            if (modal) modal.remove();
+                            showNotification('Struk siap dicetak ke printer thermal!', 'success');
+                        }
+                    }, 3000);
+                }, 100);
+            };
+        }
+
+        function printToA4(billId) {
+            const bill = bills.find(b => b.id === billId);
+            
+            // Create A4 receipt HTML
+            const receiptHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Bukti Pembayaran</title>
+                    <style>
+                        @page {
+                            size: A4;
+                            margin: 20mm;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 0; }
+                            .no-print { display: none !important; }
+                        }
+                        body {
+                            font-family: Arial, sans-serif;
+                            font-size: 12px;
+                            line-height: 1.4;
+                            color: #000;
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 20px;
+                        }
+                        .header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                            border-bottom: 2px solid #000;
+                            padding-bottom: 15px;
+                        }
+                        .company-name {
+                            font-size: 18px;
+                            font-weight: bold;
+                            margin-bottom: 5px;
+                        }
+                        .company-address {
+                            font-size: 12px;
+                            color: #666;
+                        }
+                        .receipt-title {
+                            font-size: 16px;
+                            font-weight: bold;
+                            text-align: center;
+                            margin: 20px 0;
+                            background: #f0f0f0;
+                            padding: 10px;
+                        }
+                        .details-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 20px 0;
+                        }
+                        .details-table td {
+                            padding: 8px;
+                            border-bottom: 1px solid #ddd;
+                        }
+                        .details-table .label {
+                            font-weight: bold;
+                            width: 40%;
+                        }
+                        .amount-section {
+                            background: #f9f9f9;
+                            padding: 15px;
+                            margin: 20px 0;
+                            border: 2px solid #000;
+                            text-align: center;
+                        }
+                        .amount {
+                            font-size: 24px;
+                            font-weight: bold;
+                            color: #2563eb;
+                        }
+                        .footer {
+                            text-align: center;
+                            margin-top: 30px;
+                            padding-top: 15px;
+                            border-top: 1px solid #ddd;
+                            font-size: 11px;
+                            color: #666;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="company-name">BUMDes Cikahuripan Makmur Mandiri Sejahtera</div>
+                        <div class="company-address">
+                            Desa Cikahuripan, Klapanunggal, Bogor<br>
+                            Layanan Internet BUMDes
+                        </div>
+                    </div>
+                    
+                    <div class="receipt-title">BUKTI PEMBAYARAN INTERNET</div>
+                    
+                    <table class="details-table">
+                        <tr>
+                            <td class="label">No. Transaksi</td>
+                            <td>: ${bill.id.toString().slice(-8)}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Tanggal Pembayaran</td>
+                            <td>: ${new Date(bill.paymentDate).toLocaleDateString('id-ID')}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Waktu Pembayaran</td>
+                            <td>: ${new Date().toLocaleTimeString('id-ID')}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Nama Pelanggan</td>
+                            <td>: ${bill.customerName}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Paket Internet</td>
+                            <td>: ${bill.package}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Periode Tagihan</td>
+                            <td>: ${bill.periodDisplay}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Metode Pembayaran</td>
+                            <td>: ${bill.paymentMethod}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Status Pembayaran</td>
+                            <td>: <strong>${bill.status}</strong></td>
+                        </tr>
+                    </table>
+                    
+                    <div class="amount-section">
+                        <div>TOTAL PEMBAYARAN</div>
+                        <div class="amount">Rp ${bill.amount.toLocaleString('id-ID')}</div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p><strong>Terima kasih atas pembayaran Anda!</strong></p>
+                        <p>Bukti pembayaran ini adalah sah dan telah tercatat dalam sistem BUMDes Cikahuripan</p>
+                        <p>Untuk informasi lebih lanjut, hubungi kantor BUMDes Cikahuripan</p>
+                        <p style="margin-top: 15px; font-size: 10px;">
+                            Dicetak pada: ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}
+                        </p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            // Create new window for printing
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(receiptHTML);
+            printWindow.document.close();
+            
+            // Wait for content to load then print
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                    
+                    // Listen for print completion events
+                    printWindow.addEventListener('afterprint', function() {
+                        printWindow.close();
+                        // Close modal after print is done
+                        const modal = document.querySelector('.fixed');
+                        if (modal) modal.remove();
+                        showNotification('Bukti pembayaran berhasil dicetak ke kertas A4!', 'success');
+                    });
+                    
+                    // Fallback: close after delay if afterprint doesn't fire
+                    setTimeout(() => {
+                        if (!printWindow.closed) {
+                            printWindow.close();
+                            const modal = document.querySelector('.fixed');
+                            if (modal) modal.remove();
+                            showNotification('Bukti pembayaran siap dicetak ke kertas A4!', 'success');
+                        }
+                    }, 3000);
+                }, 100);
+            };
+        }
+
+        function downloadReceiptPDF(billId) {
+            const bill = bills.find(b => b.id === billId);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('BUMDes Cikahuripan Makmur Mandiri Sejahtera', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text('Desa Cikahuripan, Klapanunggal, Bogor', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('BUKTI PEMBAYARAN INTERNET', 105, 45, { align: 'center' });
+            
+            // Line separator
+            doc.line(20, 50, 190, 50);
+            
+            // Receipt details
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'normal');
+            
+            const details = [
+                ['No. Transaksi', `: ${bill.id.toString().slice(-8)}`],
+                ['Tanggal Bayar', `: ${new Date(bill.paymentDate).toLocaleDateString('id-ID')}`],
+                ['Nama Pelanggan', `: ${bill.customerName}`],
+                ['Paket Internet', `: ${bill.package}`],
+                ['Periode Tagihan', `: ${bill.periodDisplay}`],
+                ['Jumlah Bayar', `: Rp ${bill.amount.toLocaleString('id-ID')}`],
+                ['Metode Pembayaran', `: ${bill.paymentMethod}`],
+                ['Status', `: ${bill.status}`]
+            ];
+            
+            let yPos = 65;
+            details.forEach(([label, value]) => {
+                doc.text(label, 25, yPos);
+                doc.text(value, 80, yPos);
+                yPos += 8;
+            });
+            
+            // Footer
+            doc.line(20, yPos + 10, 190, yPos + 10);
+            doc.setFontSize(10);
+            doc.text('Terima kasih atas pembayaran Anda', 105, yPos + 20, { align: 'center' });
+            doc.text('Layanan Internet BUMDes Cikahuripan', 105, yPos + 30, { align: 'center' });
+            
+            // Create organized filename with folder structure
+            const currentDate = new Date();
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const folderName = `BUMDes-Cikahuripan/${year}/${month}-${getMonthName(currentDate.getMonth())}/Bukti-Pembayaran`;
+            const fileName = `${folderName}/Bukti-${bill.customerName.replace(/\s+/g, '-')}-${bill.period}.pdf`;
+            
+            // Save PDF with organized folder structure
+            doc.save(fileName);
+            
+            // Close modal after PDF is generated
+            setTimeout(() => {
+                const modal = document.querySelector('.fixed');
+                if (modal) modal.remove();
+                showNotification(`PDF tersimpan di folder: ${folderName}/`, 'success');
+            }, 500);
+        }
+
+        // Reports Management
+        function updateReports() {
+            const monthlyData = {};
+            
+            // Process bills data
+            bills.forEach(bill => {
+                if (!monthlyData[bill.period]) {
+                    monthlyData[bill.period] = {
+                        period: bill.period,
+                        periodDisplay: bill.periodDisplay,
+                        totalCustomers: 0,
+                        totalBills: 0,
+                        paidBills: 0,
+                        unpaidBills: 0,
+                        totalRevenue: 0,
+                        totalExpenses: 0,
+                        profit: 0,
+                        profitMargin: 0
+                    };
+                }
+                
+                const data = monthlyData[bill.period];
+                data.totalBills++;
+                
+                if (bill.status === 'Lunas') {
+                    data.paidBills++;
+                    data.totalRevenue += bill.amount;
+                } else {
+                    data.unpaidBills++;
+                }
+            });
+            
+            // Process expenses data
+            expenses.forEach(expense => {
+                const expenseDate = new Date(expense.date);
+                const expenseMonth = `${expenseDate.getFullYear()}-${String(expenseDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!monthlyData[expenseMonth]) {
+                    monthlyData[expenseMonth] = {
+                        period: expenseMonth,
+                        periodDisplay: expenseDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+                        totalCustomers: 0,
+                        totalBills: 0,
+                        paidBills: 0,
+                        unpaidBills: 0,
+                        totalRevenue: 0,
+                        totalExpenses: 0,
+                        profit: 0,
+                        profitMargin: 0
+                    };
+                }
+                
+                monthlyData[expenseMonth].totalExpenses += expense.amount;
+            });
+            
+            // Calculate profit and margin for each period
+            Object.keys(monthlyData).forEach(period => {
+                const data = monthlyData[period];
+                
+                // Calculate total customers for each period
+                const periodBills = bills.filter(b => b.period === period);
+                const uniqueCustomers = new Set(periodBills.map(b => b.customerId));
+                data.totalCustomers = uniqueCustomers.size;
+                
+                // Calculate profit and margin
+                data.profit = data.totalRevenue - data.totalExpenses;
+                data.profitMargin = data.totalRevenue > 0 ? ((data.profit / data.totalRevenue) * 100) : 0;
+            });
+            
+            reports = Object.values(monthlyData);
+            saveReports();
+        }
+
+        function renderReports() {
+            const tbody = document.getElementById('reports-table');
+            tbody.innerHTML = '';
+            
+            const filteredReports = getFilteredReports();
+            
+            filteredReports.forEach(report => {
+                const paymentRate = report.totalBills > 0 ? ((report.paidBills / report.totalBills) * 100).toFixed(1) : 0;
+                const profitClass = report.profit >= 0 ? 'text-green-600' : 'text-red-600';
+                const marginClass = report.profitMargin >= 0 ? 'text-green-600' : 'text-red-600';
+                
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="border border-gray-300 px-4 py-3 font-medium">${report.periodDisplay}</td>
+                    <td class="border border-gray-300 px-4 py-3">${report.totalCustomers}</td>
+                    <td class="border border-gray-300 px-4 py-3 text-green-600 font-semibold">Rp ${report.totalRevenue.toLocaleString('id-ID')}</td>
+                    <td class="border border-gray-300 px-4 py-3 text-red-600 font-semibold">Rp ${report.totalExpenses.toLocaleString('id-ID')}</td>
+                    <td class="border border-gray-300 px-4 py-3 font-bold ${profitClass}">Rp ${report.profit.toLocaleString('id-ID')}</td>
+                    <td class="border border-gray-300 px-4 py-3 font-semibold ${marginClass}">${report.profitMargin.toFixed(1)}%</td>
+                    <td class="border border-gray-300 px-4 py-3">
+                        <div class="flex items-center">
+                            <div class="w-full bg-gray-200 rounded-full h-2 mr-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="width: ${paymentRate}%"></div>
+                            </div>
+                            <span class="text-sm font-medium">${paymentRate}%</span>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            updateReportSummary();
+            updateProfitAnalysis();
+            updateRegionalAnalysisDisplay();
+            updateExpenseBreakdown();
+        }
+
+        function getFilteredReports() {
+            const monthFilter = document.getElementById('report-month-filter').value;
+            if (!monthFilter) return reports.sort((a, b) => b.period.localeCompare(a.period));
+            return reports.filter(report => report.period === monthFilter);
+        }
+
+        function updateReportSummary() {
+            const filteredReports = getFilteredReports();
+            const totalRevenue = filteredReports.reduce((sum, r) => sum + r.totalRevenue, 0);
+            const totalExpenses = filteredReports.reduce((sum, r) => sum + r.totalExpenses, 0);
+            const totalProfit = totalRevenue - totalExpenses;
+            const avgProfitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+            
+            const profitClass = totalProfit >= 0 ? 'text-green-900' : 'text-red-900';
+            const profitBg = totalProfit >= 0 ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500';
+            
+            document.getElementById('report-summary').innerHTML = `
+                <div class="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2">💰 Total Pendapatan</h3>
+                    <p class="text-3xl font-bold text-blue-900">Rp ${totalRevenue.toLocaleString('id-ID')}</p>
+                </div>
+                <div class="bg-red-50 p-6 rounded-lg border-l-4 border-red-500">
+                    <h3 class="text-lg font-semibold text-red-700 mb-2">💸 Total Pengeluaran</h3>
+                    <p class="text-3xl font-bold text-red-900">Rp ${totalExpenses.toLocaleString('id-ID')}</p>
+                </div>
+                <div class="${profitBg} p-6 rounded-lg border-l-4">
+                    <h3 class="text-lg font-semibold ${totalProfit >= 0 ? 'text-green-700' : 'text-red-700'} mb-2">📈 Total Keuntungan</h3>
+                    <p class="text-3xl font-bold ${profitClass}">Rp ${totalProfit.toLocaleString('id-ID')}</p>
+                </div>
+                <div class="bg-purple-50 p-6 rounded-lg border-l-4 border-purple-500">
+                    <h3 class="text-lg font-semibold text-purple-700 mb-2">📊 Margin Keuntungan</h3>
+                    <p class="text-3xl font-bold text-purple-900">${avgProfitMargin}%</p>
+                </div>
+            `;
+        }
+
+        function updateProfitAnalysis() {
+            const filteredReports = getFilteredReports();
+            
+            if (filteredReports.length === 0) {
+                document.getElementById('profit-analysis').innerHTML = '<p class="text-gray-500 col-span-3 text-center">Belum ada data untuk analisis</p>';
+                return;
+            }
+            
+            // Calculate trends
+            const sortedReports = filteredReports.sort((a, b) => a.period.localeCompare(b.period));
+            const latestReport = sortedReports[sortedReports.length - 1];
+            const previousReport = sortedReports[sortedReports.length - 2];
+            
+            let profitTrend = 'Stabil';
+            let trendIcon = '➡️';
+            let trendClass = 'text-gray-600';
+            
+            if (previousReport) {
+                if (latestReport.profit > previousReport.profit) {
+                    profitTrend = 'Meningkat';
+                    trendIcon = '📈';
+                    trendClass = 'text-green-600';
+                } else if (latestReport.profit < previousReport.profit) {
+                    profitTrend = 'Menurun';
+                    trendIcon = '📉';
+                    trendClass = 'text-red-600';
+                }
+            }
+            
+            // Find best and worst performing months
+            const bestMonth = sortedReports.reduce((best, current) => 
+                current.profit > best.profit ? current : best
+            );
+            const worstMonth = sortedReports.reduce((worst, current) => 
+                current.profit < worst.profit ? current : worst
+            );
+            
+            document.getElementById('profit-analysis').innerHTML = `
+                <div class="bg-white p-4 rounded-lg border">
+                    <h4 class="font-semibold text-gray-800 mb-2">${trendIcon} Tren Keuntungan</h4>
+                    <p class="text-2xl font-bold ${trendClass}">${profitTrend}</p>
+                    <p class="text-sm text-gray-600 mt-1">Dibanding bulan sebelumnya</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg border">
+                    <h4 class="font-semibold text-gray-800 mb-2">🏆 Bulan Terbaik</h4>
+                    <p class="text-lg font-bold text-green-600">${bestMonth.periodDisplay}</p>
+                    <p class="text-sm text-gray-600">Rp ${bestMonth.profit.toLocaleString('id-ID')}</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg border">
+                    <h4 class="font-semibold text-gray-800 mb-2">📊 Rata-rata Margin</h4>
+                    <p class="text-2xl font-bold text-blue-600">${(filteredReports.reduce((sum, r) => sum + r.profitMargin, 0) / filteredReports.length).toFixed(1)}%</p>
+                    <p class="text-sm text-gray-600">Dari ${filteredReports.length} bulan</p>
+                </div>
+            `;
+        }
+
+        function updateExpenseBreakdown() {
+            const filteredReports = getFilteredReports();
+            const reportPeriods = filteredReports.map(r => r.period);
+            
+            // Get expenses for filtered periods
+            const relevantExpenses = expenses.filter(expense => {
+                const expenseMonth = expense.date.substring(0, 7);
+                return reportPeriods.includes(expenseMonth);
+            });
+            
+            // Group expenses by category
+            const categoryTotals = {};
+            relevantExpenses.forEach(expense => {
+                if (!categoryTotals[expense.category]) {
+                    categoryTotals[expense.category] = 0;
+                }
+                categoryTotals[expense.category] += expense.amount;
+            });
+            
+            const totalExpenses = Object.values(categoryTotals).reduce((sum, amount) => sum + amount, 0);
+            
+            // Sort categories by amount
+            const sortedCategories = Object.entries(categoryTotals)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 6); // Show top 6 categories
+            
+            if (sortedCategories.length === 0) {
+                document.getElementById('expense-breakdown').innerHTML = '<p class="text-gray-500 col-span-3 text-center">Belum ada data pengeluaran</p>';
+                return;
+            }
+            
+            const breakdownHTML = sortedCategories.map(([category, amount]) => {
+                const percentage = totalExpenses > 0 ? ((amount / totalExpenses) * 100).toFixed(1) : 0;
+                const icon = getCategoryIcon(category);
+                
+                return `
+                    <div class="bg-white p-4 rounded-lg border">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-gray-800 text-sm">${icon} ${category}</h4>
+                            <span class="text-xs text-gray-500">${percentage}%</span>
+                        </div>
+                        <p class="text-lg font-bold text-red-600">Rp ${amount.toLocaleString('id-ID')}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            <div class="bg-red-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('expense-breakdown').innerHTML = breakdownHTML;
+        }
+
+        function updateRegionalAnalysisDisplay() {
+            const regionalData = getRegionalAnalysis();
+            
+            if (regionalData.length === 0) {
+                document.getElementById('regional-analysis').innerHTML = '<p class="text-gray-500 col-span-3 text-center">Belum ada data pelanggan dengan wilayah</p>';
+                return;
+            }
+            
+            // Show top 6 regions
+            const topRegions = regionalData.slice(0, 6);
+            const totalCustomers = regionalData.reduce((sum, r) => sum + r.customers, 0);
+            const totalRevenue = regionalData.reduce((sum, r) => sum + r.revenue, 0);
+            
+            const analysisHTML = topRegions.map(region => {
+                const customerPercentage = totalCustomers > 0 ? ((region.customers / totalCustomers) * 100).toFixed(1) : 0;
+                const revenuePercentage = totalRevenue > 0 ? ((region.revenue / totalRevenue) * 100).toFixed(1) : 0;
+                const avgRevenuePerCustomer = region.customers > 0 ? (region.revenue / region.customers) : 0;
+                
+                return `
+                    <div class="bg-white p-4 rounded-lg border border-blue-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-blue-800 text-sm">📍 ${region.name}</h4>
+                            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">${customerPercentage}%</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Pelanggan:</span>
+                                <span class="font-semibold text-blue-700">${region.customers} orang</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Pendapatan:</span>
+                                <span class="font-semibold text-green-600">Rp ${region.revenue.toLocaleString('id-ID')}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Rata-rata/Pelanggan:</span>
+                                <span class="font-semibold text-purple-600">Rp ${Math.round(avgRevenuePerCustomer).toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: ${customerPercentage}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${revenuePercentage}% dari total pendapatan</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('regional-analysis').innerHTML = analysisHTML;
+        }
+
+        // Filter Management
+        function updateMonthFilters() {
+            const uniquePeriods = [...new Set(bills.map(b => b.period))].sort().reverse();
+            
+            const billFilter = document.getElementById('bill-month-filter');
+            const reportFilter = document.getElementById('report-month-filter');
+            
+            [billFilter, reportFilter].forEach(filter => {
+                filter.innerHTML = '<option value="">Semua Bulan</option>';
+                uniquePeriods.forEach(period => {
+                    const bill = bills.find(b => b.period === period);
+                    const option = document.createElement('option');
+                    option.value = period;
+                    option.textContent = bill.periodDisplay;
+                    filter.appendChild(option);
+                });
+            });
+        }
+
+        function filterBillsByMonth() {
+            renderBills();
+            updateBillsSummary();
+        }
+
+        function filterReportsByMonth() {
+            renderReports();
+        }
+
+        // Export Functions
+        function exportCompleteReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('BUMDes Cikahuripan Makmur Mandiri Sejahtera', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text('Desa Cikahuripan, Klapanunggal, Bogor', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('LAPORAN KEUANGAN LENGKAP', 105, 45, { align: 'center' });
+            
+            // Date
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 105, 55, { align: 'center' });
+            
+            // Line separator
+            doc.line(20, 60, 190, 60);
+            
+            // Summary
+            const filteredReports = getFilteredReports();
+            const totalRevenue = filteredReports.reduce((sum, r) => sum + r.totalRevenue, 0);
+            const totalExpenses = filteredReports.reduce((sum, r) => sum + r.totalExpenses, 0);
+            const totalProfit = totalRevenue - totalExpenses;
+            const avgMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('RINGKASAN KEUANGAN:', 20, 75);
+            
+            doc.setFont(undefined, 'normal');
+            doc.text(`Total Pendapatan: Rp ${totalRevenue.toLocaleString('id-ID')}`, 20, 85);
+            doc.text(`Total Pengeluaran: Rp ${totalExpenses.toLocaleString('id-ID')}`, 20, 95);
+            doc.text(`Keuntungan Bersih: Rp ${totalProfit.toLocaleString('id-ID')}`, 20, 105);
+            doc.text(`Margin Keuntungan: ${avgMargin}%`, 20, 115);
+            
+            // Regional Analysis
+            doc.setFont(undefined, 'bold');
+            doc.text('ANALISIS PER WILAYAH:', 20, 130);
+            
+            const regionalData = getRegionalAnalysis();
+            doc.setFont(undefined, 'normal');
+            let yPos = 140;
+            
+            regionalData.forEach(region => {
+                doc.text(`${region.name}: ${region.customers} pelanggan - Rp ${region.revenue.toLocaleString('id-ID')}`, 20, yPos);
+                yPos += 8;
+            });
+            
+            // Table headers
+            yPos += 10;
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'bold');
+            const headers = ['Bulan', 'Pendapatan', 'Pengeluaran', 'Keuntungan', 'Margin'];
+            const colWidths = [35, 35, 35, 35, 25];
+            let xPos = 20;
+            
+            headers.forEach((header, i) => {
+                doc.text(header, xPos, yPos);
+                xPos += colWidths[i];
+            });
+            
+            // Table data
+            doc.setFont(undefined, 'normal');
+            yPos += 10;
+            
+            filteredReports.forEach(report => {
+                if (yPos > 270) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                const rowData = [
+                    report.periodDisplay,
+                    `Rp ${(report.totalRevenue / 1000).toFixed(0)}K`,
+                    `Rp ${(report.totalExpenses / 1000).toFixed(0)}K`,
+                    `Rp ${(report.profit / 1000).toFixed(0)}K`,
+                    `${report.profitMargin.toFixed(1)}%`
+                ];
+                
+                xPos = 20;
+                rowData.forEach((data, i) => {
+                    doc.text(data, xPos, yPos);
+                    xPos += colWidths[i];
+                });
+                yPos += 8;
+            });
+            
+            // Add expense breakdown on new page
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('BREAKDOWN PENGELUARAN PER KATEGORI', 105, 20, { align: 'center' });
+            
+            // Get expense breakdown data
+            const reportPeriods = filteredReports.map(r => r.period);
+            const relevantExpenses = expenses.filter(expense => {
+                const expenseMonth = expense.date.substring(0, 7);
+                return reportPeriods.includes(expenseMonth);
+            });
+            
+            const categoryTotals = {};
+            relevantExpenses.forEach(expense => {
+                if (!categoryTotals[expense.category]) {
+                    categoryTotals[expense.category] = 0;
+                }
+                categoryTotals[expense.category] += expense.amount;
+            });
+            
+            const sortedCategories = Object.entries(categoryTotals)
+                .sort(([,a], [,b]) => b - a);
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            yPos = 40;
+            
+            sortedCategories.forEach(([category, amount]) => {
+                const percentage = totalExpenses > 0 ? ((amount / totalExpenses) * 100).toFixed(1) : 0;
+                doc.text(`${category}: Rp ${amount.toLocaleString('id-ID')} (${percentage}%)`, 20, yPos);
+                yPos += 8;
+            });
+            
+            // Create organized filename
+            const currentDate = new Date();
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const folderName = `BUMDes-Cikahuripan/${year}/${month}-${getMonthName(currentDate.getMonth())}/Laporan-Lengkap`;
+            const fileName = `${folderName}/Laporan-Keuangan-Lengkap-${currentDate.toISOString().split('T')[0]}.pdf`;
+            
+            doc.save(fileName);
+            showNotification(`Laporan lengkap tersimpan di folder: ${folderName}/`, 'success');
+        }
+
+        // Regional Analysis Function
+        function getRegionalAnalysis() {
+            const regionalData = {};
+            
+            // Group customers by region
+            customers.forEach(customer => {
+                const region = customer.region || 'Belum Diset';
+                if (!regionalData[region]) {
+                    regionalData[region] = {
+                        name: region,
+                        customers: 0,
+                        revenue: 0
+                    };
+                }
+                regionalData[region].customers++;
+                
+                // Calculate revenue from paid bills for this customer
+                const customerBills = bills.filter(b => 
+                    b.customerId === customer.id && b.status === 'Lunas'
+                );
+                const customerRevenue = customerBills.reduce((sum, bill) => sum + bill.amount, 0);
+                regionalData[region].revenue += customerRevenue;
+            });
+            
+            // Sort by number of customers (descending)
+            return Object.values(regionalData).sort((a, b) => b.customers - a.customers);
+        }
+
+        // Migration function for existing customers without region data
+        function migrateCustomerRegions() {
+            let migratedCount = 0;
+            
+            customers.forEach(customer => {
+                if (!customer.region) {
+                    // Assign default region based on customer ID or random assignment
+                    const regions = [
+                        'RT 01/RW 01', 'RT 02/RW 01', 'RT 01/RW 02', 'RT 02/RW 02',
+                        'RT 03/RW 02', 'RT 01/RW 03', 'RT 02/RW 03', 'RT 03/RW 03',
+                        'RT 01/RW 04', 'RT 02/RW 04', 'RT 01/RW 05', 'RT 02/RW 05'
+                    ];
+                    
+                    // Assign region based on customer ID to ensure consistency
+                    const regionIndex = customer.id % regions.length;
+                    customer.region = regions[regionIndex];
+                    migratedCount++;
+                }
+            });
+            
+            if (migratedCount > 0) {
+                saveCustomers();
+                renderCustomers();
+                updateRegionFilter();
+                showNotification(`${migratedCount} pelanggan lama berhasil dimigrasikan dengan data wilayah!`, 'success');
+            }
+            
+            return migratedCount;
+        }
+
+        // Enhanced export function with regional data
+        function exportCustomersByRegion() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('BUMDes Cikahuripan Makmur Mandiri Sejahtera', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text('Desa Cikahuripan, Klapanunggal, Bogor', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('LAPORAN PELANGGAN PER WILAYAH', 105, 45, { align: 'center' });
+            
+            // Date
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 105, 55, { align: 'center' });
+            
+            // Line separator
+            doc.line(20, 60, 190, 60);
+            
+            // Regional summary
+            const regionalData = getRegionalAnalysis();
+            let yPos = 75;
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('RINGKASAN PER WILAYAH:', 20, yPos);
+            yPos += 10;
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            
+            regionalData.forEach(region => {
+                doc.text(`${region.name}: ${region.customers} pelanggan - Pendapatan: Rp ${region.revenue.toLocaleString('id-ID')}`, 20, yPos);
+                yPos += 8;
+            });
+            
+            // Detailed customer list by region
+            yPos += 10;
+            doc.setFont(undefined, 'bold');
+            doc.text('DAFTAR PELANGGAN PER WILAYAH:', 20, yPos);
+            yPos += 10;
+            
+            regionalData.forEach(regionData => {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFont(undefined, 'bold');
+                doc.text(`${regionData.name} (${regionData.customers} pelanggan):`, 20, yPos);
+                yPos += 8;
+                
+                const regionCustomers = customers.filter(c => (c.region || 'Belum Diset') === regionData.name);
+                
+                doc.setFont(undefined, 'normal');
+                regionCustomers.forEach(customer => {
+                    if (yPos > 270) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    doc.text(`• ${customer.name} - ${customer.phone} - ${customer.package}`, 25, yPos);
+                    yPos += 6;
+                });
+                
+                yPos += 5;
+            });
+            
+            // Create organized filename
+            const currentDate = new Date();
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const folderName = `BUMDes-Cikahuripan/${year}/${month}-${getMonthName(currentDate.getMonth())}/Laporan-Wilayah`;
+            const fileName = `${folderName}/Laporan-Pelanggan-Per-Wilayah-${currentDate.toISOString().split('T')[0]}.pdf`;
+            
+            doc.save(fileName);
+            showNotification(`Laporan wilayah tersimpan di folder: ${folderName}/`, 'success');
+        }
+
+        function exportReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('BUMDes Cikahuripan Makmur Mandiri Sejahtera', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text('Desa Cikahuripan, Klapanunggal, Bogor', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text('LAPORAN BULANAN TAGIHAN INTERNET', 105, 45, { align: 'center' });
+            
+            // Date
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 105, 55, { align: 'center' });
+            
+            // Line separator
+            doc.line(20, 60, 190, 60);
+            
+            // Table headers
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'bold');
+            const headers = ['Bulan', 'Pelanggan', 'Tagihan', 'Lunas', 'Belum', 'Pendapatan', 'Rate'];
+            const colWidths = [30, 20, 20, 15, 15, 30, 15];
+            let xPos = 20;
+            
+            headers.forEach((header, i) => {
+                doc.text(header, xPos, 70);
+                xPos += colWidths[i];
+            });
+            
+            // Table data
+            doc.setFont(undefined, 'normal');
+            let yPos = 80;
+            const filteredReports = getFilteredReports();
+            
+            filteredReports.forEach(report => {
+                const paymentRate = report.totalBills > 0 ? ((report.paidBills / report.totalBills) * 100).toFixed(1) : 0;
+                const rowData = [
+                    report.periodDisplay,
+                    report.totalCustomers.toString(),
+                    report.totalBills.toString(),
+                    report.paidBills.toString(),
+                    report.unpaidBills.toString(),
+                    `Rp ${(report.totalRevenue / 1000).toFixed(0)}K`,
+                    `${paymentRate}%`
+                ];
+                
+                xPos = 20;
+                rowData.forEach((data, i) => {
+                    doc.text(data, xPos, yPos);
+                    xPos += colWidths[i];
+                });
+                yPos += 10;
+            });
+            
+            // Summary
+            const totalRevenue = filteredReports.reduce((sum, r) => sum + r.totalRevenue, 0);
+            doc.line(20, yPos + 5, 190, yPos + 5);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Total Pendapatan: Rp ${totalRevenue.toLocaleString('id-ID')}`, 20, yPos + 15);
+            
+            // Create organized filename with folder structure for reports
+            const currentDate = new Date();
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const folderName = `BUMDes-Cikahuripan/${year}/${month}-${getMonthName(currentDate.getMonth())}/Laporan-Bulanan`;
+            const fileName = `${folderName}/Laporan-Bulanan-${currentDate.toISOString().split('T')[0]}.pdf`;
+            
+            doc.save(fileName);
+            showNotification(`Laporan tersimpan di folder: ${folderName}/`, 'success');
+        }
+
+        // Helper function to extract region from address
+        function extractRegionFromAddress(address) {
+            if (!address) return 'Belum Diset';
+            
+            // Look for RT/RW pattern at the beginning of address
+            const rtRwPattern = /^RT\s*(\d+)\/RW\s*(\d+)/i;
+            const match = address.match(rtRwPattern);
+            
+            if (match) {
+                const rt = match[1].padStart(2, '0');
+                const rw = match[2].padStart(2, '0');
+                return `RT ${rt}/RW ${rw}`;
+            }
+            
+            // If no RT/RW found, return 'Belum Diset'
+            return 'Belum Diset';
+        }
+
+        // Helper function to get month name in Indonesian
+        function getMonthName(monthIndex) {
+            const months = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            return months[monthIndex];
+        }
+
+        // Utility Functions
+        function saveCustomers() {
+            localStorage.setItem('bumdes_customers', JSON.stringify(customers));
+        }
+
+        function saveBills() {
+            localStorage.setItem('bumdes_bills', JSON.stringify(bills));
+            updateMonthFilters();
+        }
+
+        function saveExpenses() {
+            localStorage.setItem('bumdes_expenses', JSON.stringify(expenses));
+        }
+
+        function saveReports() {
+            localStorage.setItem('bumdes_reports', JSON.stringify(reports));
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            
+            notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990d94aea7a1d572',t:'MTc2MDg0ODY1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
